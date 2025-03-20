@@ -115,44 +115,8 @@ server <- function(input, output, session) {
       escape = FALSE,
       options = list(
         pageLength = 20,
-        dom = 'Bfrtip',
         autoWidth = TRUE,
-        ordering = FALSE,
-        initComplete = JS(
-          "function(settings, json) {",
-          "$('<button id=\"toggle-select-all\" class=\"btn-primary\" style=\"position: absolute; left: 0;margin-left: 10px;\">Select All/Unselect All</button>').prependTo($(settings.nTableWrapper).find('.dataTables_filter'));",
-          "var selectedIDs = {};",
-          "$('#toggle-select-all').click(function() {",
-          "var checked = !(document.querySelector('#toggle-select-all').dataset.checked === 'true');",
-          "document.querySelector('#toggle-select-all').dataset.checked = checked;",
-          "$('.dt-checkbox').each(function(index) {",
-          "if (checked) { $(this).prop('checked', true); selectedIDs[index] = true; }",
-          "else { $(this).prop('checked', false); delete selectedIDs[index]; }",
-          "});",
-          "Shiny.setInputValue('selected_ids', Object.keys(selectedIDs));",
-          "});",
-          
-          "$('.dt-checkbox').on('change', function() {",
-          "var index = $(this).closest('tr').index();",
-          "if ($(this).is(':checked')) {",
-          "selectedIDs[index] = true;",
-          "} else {",
-          "delete selectedIDs[index];",
-          "}",
-          "Shiny.setInputValue('selected_ids', Object.keys(selectedIDs));",
-          "});",
-          
-          "settings.oApi._fnCallbackReg(settings, 'aoDrawCallback', function(settings) {",
-          "$('.dt-checkbox').each(function(index) {",
-          "if (selectedIDs[index]) {",
-          "$(this).prop('checked', true);",
-          "} else {",
-          "$(this).prop('checked', false);",
-          "}",
-          "});",
-          "});",
-          "}"
-        ),
+        ordering = FALSE,,
         columnDefs = list(
           list(orderable = FALSE, className = 'select-checkbox', targets = 0)
         )
