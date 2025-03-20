@@ -9,12 +9,41 @@ library(gridExtra)
 library(icesTAF)
 library(tibble)
 library(shinycssloaders)
-library(data.table)
+
+initComplete = JS(
+  "function(settings, json) {",
+  "var selectedIndices = {};",
+  "var toggleButton = $('<button id=\"toggle-select-all\" class=\"btn-primary\" style=\"position: absolute; left: 0;margin-left: 10px;\">Select All/Unselect All</button>')",
+  "toggleButton.appendTo($(settings.nTableWrapper).find('.dataTables_filter'));",
+  "toggleButton.click(function() {",
+  "var checked = !(this.dataset.checked === 'true');",
+  "this.dataset.checked = checked;",
+  "$('.dt-checkbox').each(function() {",
+  "var rowIndex = $(this).closest('tr').data('index');",
+  "selectedIndices[rowIndex] = checked;",
+  "$(this).prop('checked', checked);",
+  "});",
+  "Shiny.setInputValue('selected_ids', Object.keys(selectedIndices));",
+  "});",
+  
+  "$('.dt-checkbox').on('change', function() {",
+  "var index = $(this).closest('tr').data('index');",
+  "selectedIndices[index] = $(this).is(':checked');",
+  "Shiny.setInputValue('selected_ids', Object.keys(selectedIndices));",
+  "});",
+  
+  "settings.oApi._fnCallbackReg(settings, 'aoDrawCallback', function() {",
+  "$('.dt-checkbox').each(function() {",
+  "$(this).prop('checked', selectedIndices[$(this).closest('tr').data('index')]);",
+  "});",
+  "});",
+  "}"
+)
 
 
 # Load necessary data
 ecoregions <- readRDS("Data/Ecoregions.RData")
-url_github<- "https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"
+url_github <- "https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"
 load(url(url_github))
 
 # Extract unique categories excluding NAs for UI creation
@@ -63,7 +92,7 @@ ui <- fluidPage(
         leafletOutput("map", height = 400),
         selectInput("selected_shapefile", "Choose ecoregions", choices = unique(ecoregions$Ecoregion)),
         br(),
-        checkboxGroupInput("selected_categories", "Select Categories:", choices = category_choices, selected = category_choices)
+        checkboxGroupInput("selected_categories", "Select Categories:", choices = category_choices, selected = category_choices),
       ),
       mainPanel(
         DTOutput("Variables"),
@@ -77,8 +106,6 @@ ui <- fluidPage(
   )
 )
 
-
-
 server <- function(input, output, session) {
   # Track original indices when filtering for selected categories
   filtered_data <- reactive({
@@ -87,17 +114,26 @@ server <- function(input, output, session) {
     # Add original indices as an attribute but do not select it
     info_filtered <- info %>%
       mutate(original_index = row_number()) %>% # This preserves original indices
-      filter(category %in% input$selected_categories & !is.na(category)) %>% 
-      mutate(selectable = '<input type="checkbox" class="dt-checkbox" />')
+      filter(category %in% input$selected_categories & !is.na(category)) 
     
     # Save original indices in a reactive value
     rv$original_indices <- info_filtered$original_index
     
     # Select columns for DT without showing original_index
-    info_filtered %>% select(selectable, FullName, unit, category)  
+    info_filtered %>% select(FullName, unit, category)  
   })
   
   rv <- reactiveValues(DataVariables = NULL, original_indices = NULL, tabsCreated = FALSE)
+  
+  observeEvent(input$select_all, {
+    isolate({
+      if (length(input$selected_categories) < length(category_choices)) {
+        updateCheckboxGroupInput(session, "selected_categories", selected = category_choices)
+      } else {
+        updateCheckboxGroupInput(session, "selected_categories", selected = character(0))
+      }
+    })
+  })
   
   output$lastUpdate <- renderText({
     paste("Last updated on:", extract_github_commit_date())
@@ -109,27 +145,29 @@ server <- function(input, output, session) {
       addPolygons(data = ecoregions, fillColor = ~factor(Ecoregion), color = "black", opacity = 0.7, fillOpacity = 0.3)
   })
   
-  output$Variables <- renderDT({
+  output$Variables <- renderDataTable(server = FALSE, {
     datatable(
       filtered_data(),
       escape = FALSE,
+      extensions = "Select",
+      selection = 'none',
       options = list(
+        select = list(style = "multi"),
+        initComplete = initComplete,
         pageLength = 20,
         autoWidth = TRUE,
-        ordering = FALSE,,
-        columnDefs = list(
-          list(orderable = FALSE, className = 'select-checkbox', targets = 0)
-        )
+        ordering = FALSE
       )
     )
   })
   
   # Modifying the observeEvent function for the 'continue' button
   observeEvent(input$continue, {
-    req(input$selected_ids)
+    req(input$Variables_rows_selected)
+    print(input$Variables_rows_selected)
     
     # Convert selected row indices in DT table to original indices stored in rv
-    selected_indices <- rv$original_indices[as.numeric(input$selected_ids) + 1]
+    selected_indices <- rv$original_indices[as.numeric(input$Variables_rows_selected) + 1]
     rv$DataVariables <- table.all[selected_indices]
     
     # Check if tabs have not been created yet
@@ -171,7 +209,7 @@ server <- function(input, output, session) {
       plotlist <- list()
       for (i in seq_along(selected_data)) {
         data_item <- selected_data[[i]]
-        j <- rv$original_indices[as.numeric(input$selected_ids)[i] + 1] # Original index mapping
+        j <- rv$original_indices[as.numeric(input$Variables_rows_selected)[i] ] # Original index mapping
         
         if (is_tibble(data_item) && ncol(data_item) >= 2) {
           plotlist[[i]] <- ggATAC(result = data_item) +
@@ -253,7 +291,7 @@ server <- function(input, output, session) {
           filter(year >= startyear & year <= endyear)
         
         # Add a column to the data.table
-        data_item[, TableName := info$FullName[rv$original_indices[as.numeric(input$selected_ids)[i] + 1]]]
+        data_item[, TableName := info$FullName[rv$original_indices[input$Variables_rows_selected[i]]]]
         
         # Append the modified data.table to the list
         modified_data[[i]] <- data_item
