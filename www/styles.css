@@ -10,6 +10,12 @@ div.row {
   position: relative;
   top: 30px;
 }
+div(
+      class = "main-panel",
+      style = "flex-grow: 1; margin-left: 20px;resize:both;overflow:auto;",  # main panel left margin
+      h2("Main Panel"),
+      plotOutput("plot")
+    )
 
 body{
   font-family: 'Manrope', sans-serif;

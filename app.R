@@ -8,6 +8,7 @@ library(ggplot2)
 library(gridExtra)
 library(icesTAF)
 library(shinycssloaders)
+library(tibble)
 
 initComplete <- JS(
   "function(settings, json){",
@@ -115,7 +116,7 @@ server <- function(input, output, session) {
       options = list(
         select = list(style = "multi"),
         initComplete = initComplete,
-        pageLength = 20,
+        pageLength = 15,
         autoWidth = TRUE,
         ordering = FALSE
       )
@@ -137,7 +138,10 @@ server <- function(input, output, session) {
                 tabPanel(
                   "Graphs",
                   fluidRow(
-                    column(12, plotOutput("Graphs", height = "800px"))
+                    img(src = "ATAC_series_interpretation2023.png", height = 600, width = "100%"),
+                    br(),
+                    br(),
+                    column(12, plotOutput("Graphs", height = "600px"))
                   )
                 )
       )
