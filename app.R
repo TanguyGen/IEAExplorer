@@ -1,5 +1,5 @@
 library(shiny)
-library(leaflet)
+library(shinyjs)
 library(sf)
 library(tidyr)
 library(dplyr)
@@ -7,36 +7,25 @@ library(DT)
 library(ggplot2)
 library(gridExtra)
 library(icesTAF)
-library(tibble)
 library(shinycssloaders)
 
-initComplete = JS(
-  "function(settings, json) {",
-  "var selectedIndices = {};",
-  "var toggleButton = $('<button id=\"toggle-select-all\" class=\"btn-primary\" style=\"position: absolute; left: 0;margin-left: 10px;\">Select All/Unselect All</button>')",
-  "toggleButton.appendTo($(settings.nTableWrapper).find('.dataTables_filter'));",
-  "toggleButton.click(function() {",
-  "var checked = !(this.dataset.checked === 'true');",
-  "this.dataset.checked = checked;",
-  "$('.dt-checkbox').each(function() {",
-  "var rowIndex = $(this).closest('tr').data('index');",
-  "selectedIndices[rowIndex] = checked;",
-  "$(this).prop('checked', checked);",
-  "});",
-  "Shiny.setInputValue('selected_ids', Object.keys(selectedIndices));",
-  "});",
-  
-  "$('.dt-checkbox').on('change', function() {",
-  "var index = $(this).closest('tr').data('index');",
-  "selectedIndices[index] = $(this).is(':checked');",
-  "Shiny.setInputValue('selected_ids', Object.keys(selectedIndices));",
-  "});",
-  
-  "settings.oApi._fnCallbackReg(settings, 'aoDrawCallback', function() {",
-  "$('.dt-checkbox').each(function() {",
-  "$(this).prop('checked', selectedIndices[$(this).closest('tr').data('index')]);",
-  "});",
-  "});",
+initComplete <- JS(
+  "function(settings, json){",
+  "  var table = this.api();",
+  "  $('<button id=\"toggle-select-all\" class=\"btn btn-primary\" style=\"margin: 10px;\">Select All/Unselect All</button>').prependTo($(table.table().container()).find('.dataTables_filter'));",
+  "  var allSelected = false;",
+  "  $('#toggle-select-all').click(function() {",
+  "    allSelected = !allSelected;",
+  "    table.rows().every(function(rowIdx, a, b) {",
+  "      if (allSelected) {",
+  "        this.select();",
+  "      } else {",
+  "        this.deselect();",
+  "      }",
+  "    });",
+  "    var selectedIDs = table.rows({selected: true}).indexes().toArray();",
+  "    Shiny.setInputValue('Variables_rows_selected', selectedIDs);",
+  "  });",
   "}"
 )
 
@@ -56,20 +45,9 @@ ui <- fluidPage(
     tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
     tags$link(rel = "preconnect", href = "https://fonts.gstatic.com"),
     tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Manrope:wght@300&family=Roboto:wght@100&display=swap"),
-    tags$link(rel = "stylesheet", href = "https://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css"),
-    tags$style(type = "text/css", "
-      #graphs-container {
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        transition: height 0.5s ease;
-        height: auto; /* Use auto for dynamic height */
-      }
-      #Graphs {
-        height: 100vh; /* Set initial height to view height */
-        overflow-y: auto; /* Enable vertical scrolling */
-      }
-    ")
+    tags$link(rel = "stylesheet", href = "https://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css")
   ),
+  useShinyjs(),
   withTags({
     div(
       class = "header",
@@ -89,7 +67,7 @@ ui <- fluidPage(
     id = "menu",
     tabPanel("Ecoregions and Variables", sidebarLayout(
       sidebarPanel(
-        leafletOutput("map", height = 400),
+        img(src = "Map_Norwegian_Sea.svg", height = 400, width = "100%"),
         selectInput("selected_shapefile", "Choose ecoregions", choices = unique(ecoregions$Ecoregion)),
         br(),
         checkboxGroupInput("selected_categories", "Select Categories:", choices = category_choices, selected = category_choices),
@@ -124,27 +102,10 @@ server <- function(input, output, session) {
   })
   
   rv <- reactiveValues(DataVariables = NULL, original_indices = NULL, tabsCreated = FALSE)
-  
-  observeEvent(input$select_all, {
-    isolate({
-      if (length(input$selected_categories) < length(category_choices)) {
-        updateCheckboxGroupInput(session, "selected_categories", selected = category_choices)
-      } else {
-        updateCheckboxGroupInput(session, "selected_categories", selected = character(0))
-      }
-    })
-  })
-  
+
   output$lastUpdate <- renderText({
     paste("Last updated on:", extract_github_commit_date())
   })
-  
-  output$map <- renderLeaflet({
-    leaflet() %>%
-      addTiles() %>%
-      addPolygons(data = ecoregions, fillColor = ~factor(Ecoregion), color = "black", opacity = 0.7, fillOpacity = 0.3)
-  })
-  
   output$Variables <- renderDataTable(server = FALSE, {
     datatable(
       filtered_data(),
@@ -164,13 +125,11 @@ server <- function(input, output, session) {
   # Modifying the observeEvent function for the 'continue' button
   observeEvent(input$continue, {
     req(input$Variables_rows_selected)
-    print(input$Variables_rows_selected)
     
-    # Convert selected row indices in DT table to original indices stored in rv
-    selected_indices <- rv$original_indices[as.numeric(input$Variables_rows_selected) + 1]
+    # Ensure selection is correctly interpreted
+    selected_indices <- rv$original_indices[as.integer(input$Variables_rows_selected) + 1]
     rv$DataVariables <- table.all[selected_indices]
     
-    # Check if tabs have not been created yet
     if (!rv$tabsCreated) {
       rv$tabsCreated <- TRUE
       
@@ -187,9 +146,13 @@ server <- function(input, output, session) {
                   "Download",
                   sidebarLayout(
                     sidebarPanel(
-                      selectInput("startyear", "Select a start year:", choices = seq(from = 1980, to = 2023, by = 1), selected = 2023),
+                      selectInput("startyear", "Select a start year:",
+                                  choices = seq(from = 1980, to = 2023, by = 1),
+                                  selected = 2023),
                       br(),
-                      selectInput("endyear", "Select an end year:", choices = seq(from = 1980, to = 2023, by = 1), selected = 2023)
+                      selectInput("endyear", "Select an end year:",
+                                  choices = seq(from = 1980, to = 2023, by = 1),
+                                  selected = 2023)
                     ),
                     mainPanel(
                       fluidRow(downloadButton("CSV", label = "Download CSV file"))
@@ -201,18 +164,14 @@ server <- function(input, output, session) {
     }
   })
   
-  
+  # Inside your server function
+  # Inside your server function
   output$Graphs <- renderPlot({
     selected_data <- rv$DataVariables
-    
     if (!is.null(selected_data) && length(selected_data) > 0) {
-      plotlist <- list()
-      for (i in seq_along(selected_data)) {
-        data_item <- selected_data[[i]]
-        j <- rv$original_indices[as.numeric(input$Variables_rows_selected)[i] ] # Original index mapping
-        
+      plotlist <- lapply(selected_data, function(data_item, j) {
         if (is_tibble(data_item) && ncol(data_item) >= 2) {
-          plotlist[[i]] <- ggATAC(result = data_item) +
+          ggATAC(result = data_item) +
             xlim(c(1980, NA)) +
             ggtitle(paste0(info$FullName[j],
                            "\nData transformation: ", info$transformation[j],
@@ -221,12 +180,8 @@ server <- function(input, output, session) {
             theme(plot.title = element_text(size = 16),
                   axis.title = element_text(size = 14, face = "bold"),
                   axis.text = element_text(size = 12))
-          
-          if (info$transformation[j] == TRUE) {
-            plotlist[[i]] <- plotlist[[i]] + ylim(c(0, NA))
-          }
         } else {
-          plotlist[[i]] <- ggplot() +
+          ggplot() +
             ggtitle(paste0(info$FullName[j],
                            "\nData transformation: ", info$transformation[j],
                            "\nAutoregressive process: AR(", info$AR[j], ")")) +
@@ -234,32 +189,32 @@ server <- function(input, output, session) {
                   axis.title = element_text(size = 14, face = "bold"),
                   axis.text = element_text(size = 12))
         }
-      }
+      }, j = rv$original_indices[as.numeric(input$Variables_rows_selected)])
+      
       if (!is.null(plotlist) && length(plotlist) > 0) {
         n <- length(plotlist)
-        numrow <- ceiling(n / 2)  # Calculate the number of rows needed
-        
-        # Ensure plotlist is a list of ggplots or grobs
-        if (all(sapply(plotlist, inherits, "ggplot"))) {
-          do.call(gridExtra::grid.arrange, c(plotlist, nrow = numrow))
-        } else {
-          print("Plotlist does not contain valid ggplot objects.")
-        }
+        numrow <- ceiling(n / 2)  
+        do.call(gridExtra::grid.arrange, list(grobs = plotlist, nrow = numrow))
       }
+    } else {
+      print("No data selected for plotting.")
     }
   }, height = function() {
-    length(rv$DataVariables) * 400  # Adjust height dynamically based on number of plots
+    length(rv$DataVariables) * 400
   })
+  
+  
+  
   
   output$CSV <- downloadHandler(
     filename = function() {
-      paste0("Data_", format(Sys.time(), "%s"), ".csv")
+      paste0("Data_", format(Sys.time(), "%s"), ".zip")
     },
     content = function(file) {
       # Retrieve selected years
+      
       startyear <- as.numeric(input$startyear)
       endyear <- as.numeric(input$endyear)
-      
       # Validate year range
       if (startyear > endyear) {
         # Show error modal dialog and prevent download
@@ -271,12 +226,13 @@ server <- function(input, output, session) {
         ))
         return()  # Exit without downloading
       }
-      
+      req(startyear <= endyear)
       # Proceed with data modification and CSV creation if year range is valid
       selected_data <- rv$DataVariables
       
       # Initialize an empty list to store modified data.frames
       modified_data <- list()
+      metadata <- list()
       
       for (i in seq_along(selected_data)) {
         data_item <- selected_data[[i]]
@@ -293,13 +249,20 @@ server <- function(input, output, session) {
         # Add a column to the data.table
         data_item[, TableName := info$FullName[rv$original_indices[input$Variables_rows_selected[i]]]]
         
+        
         # Append the modified data.table to the list
         modified_data[[i]] <- data_item
+        metadata[[i]]<-info[rv$original_indices[input$Variables_rows_selected[i]],]
       }
       
       # Bind all data.tables row-wise and write to CSV
       Outputtable <- rbindlist(modified_data)
-      write.csv(Outputtable, file)
+      Metadatatable<-rbindlist(metadata)
+      write.csv(Outputtable, "www/Table.csv")
+      write.csv(Metadatatable, "www/Metadata.csv")
+      zip(file,
+          files = c("www/Table.csv", "www/Metadata.csv"),
+          extras = '-j')
     }
   )
   
