@@ -51,6 +51,51 @@ div.button{
     border-bottom: 3px solid #1B98E0; /* Light Blue accent */
 }
 
+.irs {
+    width: 100% !important;
+    max-width: 800px !important; /* Adjust if needed */
+    margin: auto !important;
+}
+
+/* Make the selection bar (blue line) thicker */
+.irs-bar {
+    height: 10px !important;
+    background-color: #1B98E0 !important; /* Ensure color is applied */
+}
+
+/* Make the round slider handles larger */
+.irs-slider {
+    width: 22px !important;
+    height: 22px !important;
+    background-color: #006494 !important; /* Match theme */
+}
+
+/* Reduce text size for better fit */
+.irs-grid-text {
+    font-size: 14px !important;
+}
+
+/* Add spacing to the bottom */
+.irs {
+    padding-bottom: 10px !important;
+}
+
+#yearRange .irs-single, 
+#yearRange .irs-from, 
+#yearRange .irs-to {
+    font-size: 16px !important;  /* Adjust the size as needed */
+    font-weight: bold !important;
+    color: white !important;  /* Change text color */
+    background-color: #006494 !important; /* Background color */
+    padding: 5px 10px !important; /* Add some spacing */
+    border-radius: 5px !important; /* Rounded corners */
+}
+
+.navbar {
+    background-color: #006494 !important; /* Deep Blue */
+    border-bottom: 3px solid #1B98E0; /* Light Blue accent */
+}
+
 /* Change navbar title (brand) font size and color */
 .navbar-brand {
     font-size: 24px !important;
@@ -64,7 +109,7 @@ div.button{
     background-color: transparent !important;
 }
 
-/* 🔥 Fix: Active (selected) tab should always stay Light Blue */
+
 .navbar-nav > li.active > a,
 .navbar-nav > li.active > a:focus,
 .navbar-nav > li.active > a:hover {
@@ -74,13 +119,12 @@ div.button{
     box-shadow: none !important;
 }
 
-/* 🔥 Fix: Hover effect should also match the active tab */
 .navbar-nav > li > a:hover {
     background-color: #1B98E0 !important; /* Light Blue */
     color: white !important;
 }
 
-/* 🔥 Fix: Prevent Bootstrap’s default focus from making the tab black */
+
 .navbar-nav > li > a:focus {
     background-color: #1B98E0 !important; /* Light Blue */
     color: white !important;

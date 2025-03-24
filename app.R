@@ -70,7 +70,7 @@ ui <- fluidPage(
       mainPanel(
         DTOutput("Variables"),
         br(),
-        actionButton("continue", "Continue", class = "btn-success"),
+        actionButton("continue", "Continue", class = "btn-success",width=200),
         br(),
         br(),
         textOutput("lastUpdate")
@@ -134,6 +134,10 @@ server <- function(input, output, session) {
     selected_indices <- rv$original_indices[as.integer(input$Variables_rows_selected) + 1]
     rv$DataVariables <- table.all[selected_indices]
     
+    Years<-unlist(lapply(rv$DataVariables, function(df) df$year))
+    min_year<-min(Years)
+    max_year<-max(Years)
+    
     if (!rv$tabsCreated) {
       rv$tabsCreated <- TRUE
       
@@ -151,13 +155,10 @@ server <- function(input, output, session) {
                   "Download",
                   sidebarLayout(
                     sidebarPanel(
-                      selectInput("startyear", "Select a start year:",
-                                  choices = seq(from = 1907, to = 2023, by = 1),
-                                  selected = 1907),
-                      br(),
-                      selectInput("endyear", "Select an end year:",
-                                  choices = seq(from = 1980, to = 2023, by = 1),
-                                  selected = 2023)
+                      sidebarPanel(
+                        sliderInput("yearRange", "Select Year Range:", min = min_year, max = max_year, value = c(min_year, max_year), step = 1, sep = "", width = "100%"),
+                        width="100%"
+                      )
                     ),
                     mainPanel(
                       fluidRow(downloadButton("CSV", label = "Download CSV file"))
@@ -227,19 +228,8 @@ server <- function(input, output, session) {
     content = function(file) {
       # Retrieve selected years
       
-      startyear <- as.numeric(input$startyear)
-      endyear <- as.numeric(input$endyear)
-      # Validate year range
-      if (startyear > endyear) {
-        # Show error modal dialog and prevent download
-        shiny::showModal(shiny::modalDialog(
-          title = "Invalid Year Range",
-          paste("The start year (", startyear, ") cannot be greater than the end year (", endyear, ")."),
-          easyClose = TRUE,
-          footer = NULL
-        ))
-        return()  # Exit without downloading
-      }
+      years <- as.numeric(input$yearRange)
+     
       # Proceed with data modification and CSV creation if year range is valid
       selected_data <- rv$DataVariables
       
@@ -257,7 +247,7 @@ server <- function(input, output, session) {
         
         # Filter data based on year range
         data_item <- data_item %>%
-          filter(year >= startyear & year <= endyear)
+          filter(year >= years[1] & year <= years[2])
         
         # Add a column to the data.table
         data_item[, TableName := info$FullName[rv$original_indices[input$Variables_rows_selected[i]]]]
