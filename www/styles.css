@@ -1,6 +1,8 @@
 .header h2 {
-  font-size: 30px;
+  font-size: 60px;
+  color: #006494 !important; 
   font-weight: bold;
+  font-family: "Playfair Display", serif !important;
   text-align: center;
 }
 h3{
@@ -44,8 +46,43 @@ div.button{
             display: block;
 }
 
+.navbar {
+    background-color: #006494 !important; /* Deep Blue */
+    border-bottom: 3px solid #1B98E0; /* Light Blue accent */
+}
 
-.spinner-custom {
-  width: 1000px; /* Adjust width */
-  height: 1000px; /* Adjust height */
+/* Change navbar title (brand) font size and color */
+.navbar-brand {
+    font-size: 24px !important;
+    color: white !important;
+}
+
+/* Change navigation tabs font size */
+.navbar-nav > li > a {
+    color: white !important;
+    font-size: 18px !important;
+    background-color: transparent !important;
+}
+
+/* 🔥 Fix: Active (selected) tab should always stay Light Blue */
+.navbar-nav > li.active > a,
+.navbar-nav > li.active > a:focus,
+.navbar-nav > li.active > a:hover {
+    background-color: #1B98E0 !important; /* Light Blue */
+    color: white !important;
+    font-size: 18px !important;
+    box-shadow: none !important;
+}
+
+/* 🔥 Fix: Hover effect should also match the active tab */
+.navbar-nav > li > a:hover {
+    background-color: #1B98E0 !important; /* Light Blue */
+    color: white !important;
+}
+
+/* 🔥 Fix: Prevent Bootstrap’s default focus from making the tab black */
+.navbar-nav > li > a:focus {
+    background-color: #1B98E0 !important; /* Light Blue */
+    color: white !important;
+    outline: none !important;
 }

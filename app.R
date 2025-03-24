@@ -15,7 +15,7 @@ library(shinythemes)
 initComplete <- JS(
   "function(settings, json){",
   "  var table = this.api();",
-  "  $('<button id=\"toggle-select-all\" class=\"btn btn-primary\" style=\"margin: 10px;\">Select All/Unselect All</button>').prependTo($(table.table().container()).find('.dataTables_filter'));",
+  "  $('<button id=\"toggle-select-all\" class=\"btn\" style=\"background-color:#1b98e0; color: white; margin: 10px;\">Select All/Unselect All</button>').prependTo($(table.table().container()).find('.dataTables_filter'));",
   "  var allSelected = false;",
   "  $('#toggle-select-all').click(function() {",
   "    allSelected = !allSelected;",
@@ -33,6 +33,7 @@ initComplete <- JS(
 )
 
 
+
 # Load necessary data
 ecoregions <- readRDS("Data/Ecoregions.RData")
 url_github <- "https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"
@@ -43,13 +44,9 @@ category_choices <- unique(info$category)
 category_choices <- category_choices[!is.na(category_choices)]
 
 ui <- fluidPage(
-  theme = shinytheme("yeti"),
   tags$head(
     includeCSS("www/styles.css"),
-    tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
-    tags$link(rel = "preconnect", href = "https://fonts.gstatic.com"),
-    tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Manrope:wght@300&family=Roboto:wght@100&display=swap"),
-    tags$link(rel = "stylesheet", href = "https://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css")
+    tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"),
   ),
   useShinyjs(),
   withTags({
@@ -67,7 +64,6 @@ ui <- fluidPage(
     tabPanel("Ecoregions and Variables", sidebarLayout(
       sidebarPanel(
         img(src = "Map_Norwegian_Sea.svg", height = 400, width = "100%", class = "responsive-img"),
-        selectInput("selected_shapefile", "Choose ecoregions", choices = unique(ecoregions$Ecoregion)),
         br(),
         checkboxGroupInput("selected_categories", "Select Categories:", choices = category_choices, selected = category_choices),
       ),
