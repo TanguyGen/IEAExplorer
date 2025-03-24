@@ -1,4 +1,4 @@
-"","ID","FullName","unit","category","transformation","AR"
-"1","SvinoyTemp","Svinoy-coreT","°C","Climate",FALSE,0
-"2","ArcticWater","Arctic Water in NS","unitless","Climate",FALSE,0
-"3","LanganesTemp","Temp-Langanes-East7","°C","Climate",FALSE,0
+"ID","FullName","unit","category","transformation","AR"
+"RelativeHearContent","Relative Heat Content","108J·m-2","Climate",FALSE,1
+"NPP","Net Primary Production","g.C.m-2.yr-1","Ecological",FALSE,0
+"ZooBMay","Zooplankton B","dry weight mg.m-2","Ecological",TRUE,0

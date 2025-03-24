@@ -10,6 +10,7 @@ library(icesTAF)
 library(shinycssloaders)
 library(tibble)
 library(data.table)
+library(shinythemes)
 
 initComplete <- JS(
   "function(settings, json){",
@@ -42,8 +43,9 @@ category_choices <- unique(info$category)
 category_choices <- category_choices[!is.na(category_choices)]
 
 ui <- fluidPage(
-  tags$head(includeCSS("www/styles.css")),
+  theme = shinytheme("yeti"),
   tags$head(
+    includeCSS("www/styles.css"),
     tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
     tags$link(rel = "preconnect", href = "https://fonts.gstatic.com"),
     tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Manrope:wght@300&family=Roboto:wght@100&display=swap"),
@@ -55,13 +57,8 @@ ui <- fluidPage(
       class = "header",
       checked = NA,
       h1(
-        img(
-          width = 200,
-          src = "ICES_logo.png",
-          class = "topleft"
-        )
       ),
-      h2("WGINOR Shiny")
+      h2("IEA Explorer")
     )
   }),
   navbarPage(
@@ -82,7 +79,18 @@ ui <- fluidPage(
         br(),
         textOutput("lastUpdate")
       )
-    ))
+    )),
+    tabPanel(
+                  "Info",
+                  fluidRow(
+                    includeMarkdown("www/ATAC_description.Rmd"),
+                    br(),
+                    br(),
+                    img(id="img11",src = "ATAC_series_interpretation2023.png", height = 600, width = "100%", class = "responsive-img"),
+                    br(),
+                    br()
+                  )
+                )
   )
 )
 
@@ -133,25 +141,23 @@ server <- function(input, output, session) {
     if (!rv$tabsCreated) {
       rv$tabsCreated <- TRUE
       
-      appendTab(inputId = "menu",
+      insertTab(inputId = "menu",
                 tabPanel(
                   "Graphs",
                   fluidRow(
-                    img(id="img11",src = "ATAC_series_interpretation2023.png", height = 600, width = "100%", class = "responsive-img"),
-                    br(),
-                    br(),
                     column(12, plotOutput("Graphs", height = "600px") %>% withSpinner(type = 8, image = "rotating_fish.gif", id = "spinner-custom"))
                   )
-                )
+                ),
+                target = "Info", position = "before"
       )
-      appendTab(inputId = "menu",
+      insertTab(inputId = "menu",
                 tabPanel(
                   "Download",
                   sidebarLayout(
                     sidebarPanel(
                       selectInput("startyear", "Select a start year:",
-                                  choices = seq(from = 1980, to = 2023, by = 1),
-                                  selected = 2023),
+                                  choices = seq(from = 1907, to = 2023, by = 1),
+                                  selected = 1907),
                       br(),
                       selectInput("endyear", "Select an end year:",
                                   choices = seq(from = 1980, to = 2023, by = 1),
@@ -161,7 +167,8 @@ server <- function(input, output, session) {
                       fluidRow(downloadButton("CSV", label = "Download CSV file"))
                     )
                   )
-                )
+                ),
+                target = "Info", position = "before"
       )
       updateTabsetPanel(session, "menu", selected = "Graphs")
     }
@@ -171,29 +178,32 @@ server <- function(input, output, session) {
     
     session$sendCustomMessage(type = "toggle-spinner", message = "hide")
     selected_data <- rv$DataVariables
+    width <- session$clientData$output_Graphs_width
+    title_size <- max(ceiling(width / 50), 16)
+    axistitle_size <- max(ceiling(width / 60), 12)
+    text_size <- max(ceiling(width / 80), 12)
     if (!is.null(selected_data) && length(selected_data) > 0) {
-      plotlist <- lapply(selected_data, function(data_item, j) {
+      plotlist <- mapply(function(data_item, j) {
         if (is_tibble(data_item) && ncol(data_item) >= 2) {
-          ggATAC(result = data_item) +
+          ggATAC(result = data_item,width=width) +
             xlim(c(1980, NA)) +
             ggtitle(paste0(info$FullName[j],
                            "\nData transformation: ", info$transformation[j],
                            "\nAutoregressive process: AR(", info$AR[j], ")")) +
             ylab(paste0("Units: ", info$unit[j])) +
             theme(plot.title = element_text(size = 16),
-                  axis.title = element_text(size = 14, face = "bold"),
-                  axis.text = element_text(size = 12))
+                  axis.title = element_text(size = axistitle_size, face = "bold"),
+                  axis.text = element_text(size = text_size))
         } else {
           ggplot() +
             ggtitle(paste0(info$FullName[j],
                            "\nData transformation: ", info$transformation[j],
                            "\nAutoregressive process: AR(", info$AR[j], ")")) +
             theme(plot.title = element_text(size = 15),
-                  axis.title = element_text(size = 14, face = "bold"),
-                  axis.text = element_text(size = 12))
+                  axis.title = element_text(size = axistitle_size, face = "bold"),
+                  axis.text = element_text(size = text_size))
         }
-      }, j = rv$original_indices[as.numeric(input$Variables_rows_selected)])
-      
+      }, selected_data, rv$original_indices[as.numeric(input$Variables_rows_selected)], SIMPLIFY = FALSE)
       if (!is.null(plotlist) && length(plotlist) > 0) {
         n <- length(plotlist)
         numrow <- ceiling(n / 2)  
@@ -205,8 +215,8 @@ server <- function(input, output, session) {
   }, height = reactive({
     width <- session$clientData$output_Graphs_width  # Get dynamic width
     num_plots <- length(rv$DataVariables)  # Get number of selected plots
-    if (is.null(width)) return(400)  # Default height if not yet available
-    if (num_plots == 0) return(400)  # Default when no plots
+    if (is.null(width)) return(400) 
+    if (num_plots == 0) return(400)
     
     plot_height <- width * 4 / 9  # Maintain 16:9 aspect ratio
     total_height <- plot_height * ceiling(num_plots / 2)  # Scale with number of plots
@@ -234,7 +244,6 @@ server <- function(input, output, session) {
         ))
         return()  # Exit without downloading
       }
-      req(startyear <= endyear)
       # Proceed with data modification and CSV creation if year range is valid
       selected_data <- rv$DataVariables
       
@@ -266,8 +275,8 @@ server <- function(input, output, session) {
       # Bind all data.tables row-wise and write to CSV
       Outputtable <- rbindlist(modified_data)
       Metadatatable<-rbindlist(metadata)
-      write.csv(Outputtable, "www/Table.csv")
-      write.csv(Metadatatable, "www/Metadata.csv")
+      write.csv(Outputtable, "www/Table.csv", row.names = FALSE)
+      write.csv(Metadatatable, "www/Metadata.csv", row.names = FALSE)
       zip(file,
           files = c("www/Table.csv", "www/Metadata.csv"),
           extras = '-j')
