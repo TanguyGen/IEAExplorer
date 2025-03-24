@@ -37,3 +37,15 @@ body{
 div.button{
   text-align: center;
 }
+
+.responsive-img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+}
+
+
+.spinner-custom {
+  width: 1000px; /* Adjust width */
+  height: 1000px; /* Adjust height */
+}

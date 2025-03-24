@@ -9,6 +9,7 @@ library(gridExtra)
 library(icesTAF)
 library(shinycssloaders)
 library(tibble)
+library(data.table)
 
 initComplete <- JS(
   "function(settings, json){",
@@ -68,7 +69,7 @@ ui <- fluidPage(
     id = "menu",
     tabPanel("Ecoregions and Variables", sidebarLayout(
       sidebarPanel(
-        img(src = "Map_Norwegian_Sea.svg", height = 400, width = "100%"),
+        img(src = "Map_Norwegian_Sea.svg", height = 400, width = "100%", class = "responsive-img"),
         selectInput("selected_shapefile", "Choose ecoregions", choices = unique(ecoregions$Ecoregion)),
         br(),
         checkboxGroupInput("selected_categories", "Select Categories:", choices = category_choices, selected = category_choices),
@@ -123,11 +124,9 @@ server <- function(input, output, session) {
     )
   })
   
-  # Modifying the observeEvent function for the 'continue' button
   observeEvent(input$continue, {
     req(input$Variables_rows_selected)
     
-    # Ensure selection is correctly interpreted
     selected_indices <- rv$original_indices[as.integer(input$Variables_rows_selected) + 1]
     rv$DataVariables <- table.all[selected_indices]
     
@@ -138,10 +137,10 @@ server <- function(input, output, session) {
                 tabPanel(
                   "Graphs",
                   fluidRow(
-                    img(src = "ATAC_series_interpretation2023.png", height = 600, width = "100%"),
+                    img(id="img11",src = "ATAC_series_interpretation2023.png", height = 600, width = "100%", class = "responsive-img"),
                     br(),
                     br(),
-                    column(12, plotOutput("Graphs", height = "600px"))
+                    column(12, plotOutput("Graphs", height = "600px") %>% withSpinner(type = 8, image = "rotating_fish.gif", id = "spinner-custom"))
                   )
                 )
       )
@@ -168,9 +167,9 @@ server <- function(input, output, session) {
     }
   })
   
-  # Inside your server function
-  # Inside your server function
   output$Graphs <- renderPlot({
+    
+    session$sendCustomMessage(type = "toggle-spinner", message = "hide")
     selected_data <- rv$DataVariables
     if (!is.null(selected_data) && length(selected_data) > 0) {
       plotlist <- lapply(selected_data, function(data_item, j) {
@@ -203,11 +202,16 @@ server <- function(input, output, session) {
     } else {
       print("No data selected for plotting.")
     }
-  }, height = function() {
-    length(rv$DataVariables) * 400
-  })
-  
-  
+  }, height = reactive({
+    width <- session$clientData$output_Graphs_width  # Get dynamic width
+    num_plots <- length(rv$DataVariables)  # Get number of selected plots
+    if (is.null(width)) return(400)  # Default height if not yet available
+    if (num_plots == 0) return(400)  # Default when no plots
+    
+    plot_height <- width * 4 / 9  # Maintain 16:9 aspect ratio
+    total_height <- plot_height * ceiling(num_plots / 2)  # Scale with number of plots
+    return(total_height)
+  }))
   
   
   output$CSV <- downloadHandler(
