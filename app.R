@@ -35,7 +35,6 @@ initComplete <- JS(
 
 
 # Load necessary data
-ecoregions <- readRDS("Data/Ecoregions.RData")
 url_github <- "https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"
 load(url(url_github))
 

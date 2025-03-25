@@ -1,0 +1,32 @@
+FROM rocker/shiny
+
+
+RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libudunits2-dev \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install R packages
+RUN R -e "install.packages(c( \
+    'shiny', 'shinyjs', 'sf', 'tidyr', 'dplyr', 'DT', \
+    'ggplot2', 'gridExtra', 'icesTAF', 'shinycssloaders', \
+    'tibble', 'data.table', 'shinythemes', 'httr', 'jsonlite' \
+    ), repos='https://cloud.r-project.org/')"
+
+
+# Set the working directory
+WORKDIR /srv/shiny-server
+
+# Copy the Shiny app files into the container
+COPY . /srv/shiny-server/
+
+# Expose the application port
+EXPOSE 8180
+
+# Run the R Shiny app
+CMD ["/usr/bin/shiny-server"]
