@@ -11,6 +11,7 @@ library(data.table)
 library(shinythemes)
 library(xlsx)
 library(markdown)
+
 initComplete <- JS(
   "function(settings, json){",
   "  var table = this.api();",
@@ -28,11 +29,16 @@ initComplete <- JS(
   "        table.row(value).deselect();", 
   "      });",
   "    }",
-  "    var selectedIDs = filteredRows.toArray().map(function(index){",
-  "      return table.row(index).index();",
-  "    });", 
-  "    Shiny.setInputValue('Variables_rows_selected', selectedIDs);", 
+  "    updateSelectedNames();",
   "  });",
+  "  table.on('select deselect', updateSelectedNames);",
+  "  function updateSelectedNames() {",
+  "    var selectedIndexes = table.rows({ selected: true }).indexes();",
+  "    var selectedNames = selectedIndexes.toArray().map(function(index){",
+  "      return table.row(index).data()[1];",
+  "    });", 
+  "    Shiny.setInputValue('Variables_rows_selected_names', selectedNames);",
+  "  }",
   "}"
 )
 
@@ -43,7 +49,7 @@ load(url(url_github))
 info<-info[-1,]
 
 # Extract unique categories excluding NAs for UI creation
-category_choices <- unique(info$category)
+category_choices <- unique(info$Category)
 category_choices <- category_choices[!is.na(category_choices)]
 
 ui <- fluidPage(
@@ -94,24 +100,22 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  # Track original indices when filtering for selected categories
+  # Track original IDs when filtering for selected categories
   filtered_data <- reactive({
     req(input$selected_categories)
     
-    # Add original indices as an attribute but do not select it
     info_filtered <- info %>%
-      mutate(original_index = row_number()) %>% # This preserves original indices
-      filter(category %in% input$selected_categories & !is.na(category)) 
+      filter(Category %in% input$selected_categories & !is.na(Category))
     
-    # Save original indices in a reactive value
-    rv$original_indices <- info_filtered$original_index - 1
+    # Save IDs in a reactive value
+    rv$selected_ids <- info_filtered$ID
     
-    # Select columns for DT without showing original_index
-    info_filtered %>% select(FullName, Unit, category)  
+    # Select columns for DT
+    info_filtered %>% select(ID,FullName, Unit, Category)  
   })
   
-  rv <- reactiveValues(DataVariables = NULL, original_indices = NULL, tabsCreated = FALSE)
-
+  rv <- reactiveValues(DataVariables = NULL, selected_ids = NULL, tabsCreated = FALSE)
+  
   output$lastUpdate <- renderText({
     paste("Last updated on:", extract_github_commit_date())
   })
@@ -134,14 +138,14 @@ server <- function(input, output, session) {
   observeEvent(input$continue, {
     req(input$Variables_rows_selected)
     
-    selected_indices <- rv$original_indices[as.integer(input$Variables_rows_selected)]
+    # Use selected indices to get corresponding IDs
+    selected_ids <- rv$selected_ids[as.integer(input$Variables_rows_selected)]
     
-    rv$DataVariables <- table.all[selected_indices]  # Ensure correct referencing back to the data source
-    print(selected_indices)
+    rv$DataVariables <- table.all[selected_ids]  # Use IDs for data extraction
     
-    Years<-unlist(lapply(rv$DataVariables, function(df) df$year))
-    min_year<-min(Years)
-    max_year<-max(Years)
+    Years <- unlist(lapply(rv$DataVariables, function(df) df$year))
+    min_year <- min(Years)
+    max_year <- max(Years)
     
     if (!rv$tabsCreated) {
       rv$tabsCreated <- TRUE
@@ -160,10 +164,8 @@ server <- function(input, output, session) {
                   "Download",
                   sidebarLayout(
                     sidebarPanel(
-                      sidebarPanel(
-                        sliderInput("yearRange", "Select Year Range:", min = min_year, max = max_year, value = c(min_year, max_year), step = 1, sep = "", width = "100%"),
-                        width="100%"
-                      )
+                      sliderInput("yearRange", "Select Year Range:", min = min_year, max = max_year, value = c(min_year, max_year), step = 1, sep = "", width = "100%"),
+                      width = "100%"
                     ),
                     mainPanel(
                       fluidRow(downloadButton("CSV", label = "Download xlsx file"))
@@ -185,28 +187,30 @@ server <- function(input, output, session) {
     text_size <- max(ceiling(width / 80), 12)
     
     if (!is.null(selected_data) && length(selected_data) > 0) {
-      plotlist <- mapply(function(data_item, j) {
+      plotlist <- lapply(names(selected_data), function(id) {
+        data_item <- selected_data[[id]]
+        info_item <- info[info$ID == id, ]
+        
         if (is_tibble(data_item) && ncol(data_item) >= 2) {
           ggATAC(result = data_item, width = width) +
             xlim(c(1980, NA)) +
-            ggtitle(paste0(info$FullName[j],
-                           "\nData transformation: ", info$Transformation[j],
-                           "\nAutoregressive process: AR(", info$AR[j], ")")) +
-            ylab(paste0("Units: ", info$Unit[j])) +
+            ggtitle(paste0(info_item$FullName,
+                           "\nData transformation: ", info_item$Transformation,
+                           "\nAutoregressive process: AR(", info_item$AR, ")")) +
+            ylab(paste0("Units: ", info_item$Unit)) +
             theme(plot.title = element_text(size = title_size),
                   axis.title = element_text(size = axistitle_size, face = "bold"),
                   axis.text = element_text(size = text_size))
         } else {
           ggplot() +
-            ggtitle(paste0(info$FullName[j],
-                           "\nData transformation: ", info$Transformation[j],
-                           "\nAutoregressive process: AR(", info$AR[j], ")")) +
+            ggtitle(paste0(info_item$FullName,
+                           "\nData transformation: ", info_item$Transformation,
+                           "\nAutoregressive process: AR(", info_item$AR, ")")) +
             theme(plot.title = element_text(size = title_size),
                   axis.title = element_text(size = axistitle_size, face = "bold"),
                   axis.text = element_text(size = text_size))
         }
-      }, selected_data,  rv$original_indices[as.integer(input$Variables_rows_selected)]+1
-      , SIMPLIFY = FALSE)
+      })
       
       if (!is.null(plotlist) && length(plotlist) > 0) {
         n <- length(plotlist)
@@ -227,25 +231,22 @@ server <- function(input, output, session) {
     return(total_height)
   }))
   
-  
   output$CSV <- downloadHandler(
     filename = function() {
-      paste0("Data_", format(Sys.time(), "%s"), ".xlsx")
+      paste0("Data_", format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), ".xlsx")
     },
     content = function(file) {
       # Retrieve selected years
-      
       years <- as.numeric(input$yearRange)
-     
-      # Proceed with data modification and CSV creation if year range is valid
+      
       selected_data <- rv$DataVariables
       
       # Initialize an empty list to store modified data.frames
       modified_data <- list()
       metadata <- list()
       
-      for (i in seq_along(selected_data)) {
-        data_item <- selected_data[[i]]
+      for (id in names(selected_data)) {
+        data_item <- selected_data[[id]]
         
         # Ensure the data_item is a data.table
         if (!is.data.table(data_item)) {
@@ -257,22 +258,20 @@ server <- function(input, output, session) {
           filter(year >= years[1] & year <= years[2])
         
         # Add a column to the data.table
-        data_item[, Variable := info$FullName[rv$original_indices[input$Variables_rows_selected[i]]]]
+        data_item[, Variable := info$FullName[info$ID == id]]
         
         # Append the modified data.table to the list
-        modified_data[[i]] <- data_item
-        metadata[[i]]<-info[rv$original_indices[input$Variables_rows_selected[i]],]
+        modified_data[[id]] <- data_item
+        metadata[[id]] <- info[info$ID == id, ]
       }
       
       # Bind all data.tables row-wise and write to CSV
       Outputtable <- rbindlist(modified_data)
-      Metadatatable<-rbindlist(metadata)
-      write.xlsx(Metadatatable, file=file, sheetName="Metadata", row.names=FALSE)
-      write.xlsx(Outputtable, file=file, sheetName="Table", append=TRUE, row.names=FALSE)
-
+      Metadatatable <- rbindlist(metadata)
+      write.xlsx(Metadatatable, file = file, sheetName = "Metadata", row.names = FALSE)
+      write.xlsx(Outputtable, file = file, sheetName = "Table", append = TRUE, row.names = FALSE)
     }
   )
-  
 }
 
 shinyApp(ui = ui, server = server)
