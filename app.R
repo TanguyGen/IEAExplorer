@@ -5,13 +5,12 @@ library(dplyr)
 library(DT)
 library(ggplot2)
 library(gridExtra)
-library(icesTAF)
 library(shinycssloaders)
 library(tibble)
 library(data.table)
 library(shinythemes)
 library(xlsx)
-
+library(markdown)
 initComplete <- JS(
   "function(settings, json){",
   "  var table = this.api();",
@@ -19,24 +18,29 @@ initComplete <- JS(
   "  var allSelected = false;",
   "  $('#toggle-select-all').click(function() {",
   "    allSelected = !allSelected;",
-  "    table.rows().every(function(rowIdx, a, b) {",
-  "      if (allSelected) {",
-  "        this.select();",
-  "      } else {",
-  "        this.deselect();",
-  "      }",
-  "    });",
-  "    var selectedIDs = table.rows({selected: true}).indexes().toArray();",
-  "    Shiny.setInputValue('Variables_rows_selected', selectedIDs);",
+  "    var filteredRows = table.rows({ filter: 'applied' }).indexes();",
+  "    if (allSelected) {",
+  "      filteredRows.each(function(value) {",
+  "        table.row(value).select();", 
+  "      });",
+  "    } else {",
+  "      filteredRows.each(function(value) {",
+  "        table.row(value).deselect();", 
+  "      });",
+  "    }",
+  "    var selectedIDs = filteredRows.toArray().map(function(index){",
+  "      return table.row(index).index();",
+  "    });", 
+  "    Shiny.setInputValue('Variables_rows_selected', selectedIDs);", 
   "  });",
   "}"
 )
 
 
-
 # Load necessary data
 url_github <- "https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"
 load(url(url_github))
+info<-info[-1,]
 
 # Extract unique categories excluding NAs for UI creation
 category_choices <- unique(info$category)
@@ -100,10 +104,10 @@ server <- function(input, output, session) {
       filter(category %in% input$selected_categories & !is.na(category)) 
     
     # Save original indices in a reactive value
-    rv$original_indices <- info_filtered$original_index
+    rv$original_indices <- info_filtered$original_index - 1
     
     # Select columns for DT without showing original_index
-    info_filtered %>% select(FullName, unit, category)  
+    info_filtered %>% select(FullName, Unit, category)  
   })
   
   rv <- reactiveValues(DataVariables = NULL, original_indices = NULL, tabsCreated = FALSE)
@@ -130,8 +134,10 @@ server <- function(input, output, session) {
   observeEvent(input$continue, {
     req(input$Variables_rows_selected)
     
-    selected_indices <- rv$original_indices[as.integer(input$Variables_rows_selected) + 1]
-    rv$DataVariables <- table.all[selected_indices]
+    selected_indices <- rv$original_indices[as.integer(input$Variables_rows_selected)]
+    
+    rv$DataVariables <- table.all[selected_indices]  # Ensure correct referencing back to the data source
+    print(selected_indices)
     
     Years<-unlist(lapply(rv$DataVariables, function(df) df$year))
     min_year<-min(Years)
@@ -160,7 +166,7 @@ server <- function(input, output, session) {
                       )
                     ),
                     mainPanel(
-                      fluidRow(downloadButton("CSV", label = "Download CSV file"))
+                      fluidRow(downloadButton("CSV", label = "Download xlsx file"))
                     )
                   )
                 ),
@@ -171,51 +177,53 @@ server <- function(input, output, session) {
   })
   
   output$Graphs <- renderPlot({
-    
     session$sendCustomMessage(type = "toggle-spinner", message = "hide")
     selected_data <- rv$DataVariables
     width <- session$clientData$output_Graphs_width
     title_size <- max(ceiling(width / 50), 16)
     axistitle_size <- max(ceiling(width / 60), 12)
     text_size <- max(ceiling(width / 80), 12)
+    
     if (!is.null(selected_data) && length(selected_data) > 0) {
       plotlist <- mapply(function(data_item, j) {
         if (is_tibble(data_item) && ncol(data_item) >= 2) {
-          ggATAC(result = data_item,width=width) +
+          ggATAC(result = data_item, width = width) +
             xlim(c(1980, NA)) +
             ggtitle(paste0(info$FullName[j],
-                           "\nData transformation: ", info$transformation[j],
+                           "\nData transformation: ", info$Transformation[j],
                            "\nAutoregressive process: AR(", info$AR[j], ")")) +
-            ylab(paste0("Units: ", info$unit[j])) +
-            theme(plot.title = element_text(size = 16),
+            ylab(paste0("Units: ", info$Unit[j])) +
+            theme(plot.title = element_text(size = title_size),
                   axis.title = element_text(size = axistitle_size, face = "bold"),
                   axis.text = element_text(size = text_size))
         } else {
           ggplot() +
             ggtitle(paste0(info$FullName[j],
-                           "\nData transformation: ", info$transformation[j],
+                           "\nData transformation: ", info$Transformation[j],
                            "\nAutoregressive process: AR(", info$AR[j], ")")) +
-            theme(plot.title = element_text(size = 15),
+            theme(plot.title = element_text(size = title_size),
                   axis.title = element_text(size = axistitle_size, face = "bold"),
                   axis.text = element_text(size = text_size))
         }
-      }, selected_data, rv$original_indices[as.numeric(input$Variables_rows_selected)], SIMPLIFY = FALSE)
+      }, selected_data,  rv$original_indices[as.integer(input$Variables_rows_selected)]+1
+      , SIMPLIFY = FALSE)
+      
       if (!is.null(plotlist) && length(plotlist) > 0) {
         n <- length(plotlist)
-        numrow <- ceiling(n / 2)  
+        numrow <- ceiling(n / 2)
         do.call(gridExtra::grid.arrange, list(grobs = plotlist, nrow = numrow))
       }
     } else {
       print("No data selected for plotting.")
     }
   }, height = reactive({
-    width <- session$clientData$output_Graphs_width  # Get dynamic width
-    num_plots <- length(rv$DataVariables)  # Get number of selected plots
-    if (is.null(width)) return(400) 
+    width <- session$clientData$output_Graphs_width
+    num_plots <- length(rv$DataVariables)
+    if (is.null(width)) return(400)
     if (num_plots == 0) return(400)
     
-    plot_height <- width * 1/3  # Maintain 16:9 aspect ratio
-    total_height <- plot_height * ceiling(num_plots / 2)  # Scale with number of plots
+    plot_height <- width * 1/3
+    total_height <- plot_height * ceiling(num_plots / 2)
     return(total_height)
   }))
   

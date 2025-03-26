@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 # Install required R packages
 RUN R -e "install.packages(c( \
     'shinyjs', 'tidyr', 'dplyr', 'DT', \
-    'ggplot2', 'gridExtra', 'icesTAF', 'shinycssloaders', \
+    'ggplot2', 'gridExtra', 'shinycssloaders', \
     'tibble', 'data.table', 'shinythemes', 'httr', 'jsonlite', \
     'markdown','xlsx' \
     ), repos='https://cloud.r-project.org/')"
