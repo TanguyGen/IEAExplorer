@@ -1,6 +1,5 @@
 library(shiny)
 library(shinyjs)
-library(sf)
 library(tidyr)
 library(dplyr)
 library(DT)
@@ -11,6 +10,7 @@ library(shinycssloaders)
 library(tibble)
 library(data.table)
 library(shinythemes)
+library(xlsx)
 
 initComplete <- JS(
   "function(settings, json){",
@@ -214,7 +214,7 @@ server <- function(input, output, session) {
     if (is.null(width)) return(400) 
     if (num_plots == 0) return(400)
     
-    plot_height <- width * 4 / 9  # Maintain 16:9 aspect ratio
+    plot_height <- width * 1/3  # Maintain 16:9 aspect ratio
     total_height <- plot_height * ceiling(num_plots / 2)  # Scale with number of plots
     return(total_height)
   }))
@@ -222,7 +222,7 @@ server <- function(input, output, session) {
   
   output$CSV <- downloadHandler(
     filename = function() {
-      paste0("Data_", format(Sys.time(), "%s"), ".zip")
+      paste0("Data_", format(Sys.time(), "%s"), ".xlsx")
     },
     content = function(file) {
       # Retrieve selected years
@@ -249,8 +249,7 @@ server <- function(input, output, session) {
           filter(year >= years[1] & year <= years[2])
         
         # Add a column to the data.table
-        data_item[, TableName := info$FullName[rv$original_indices[input$Variables_rows_selected[i]]]]
-        
+        data_item[, Variable := info$FullName[rv$original_indices[input$Variables_rows_selected[i]]]]
         
         # Append the modified data.table to the list
         modified_data[[i]] <- data_item
@@ -260,11 +259,9 @@ server <- function(input, output, session) {
       # Bind all data.tables row-wise and write to CSV
       Outputtable <- rbindlist(modified_data)
       Metadatatable<-rbindlist(metadata)
-      write.csv(Outputtable, "www/Table.csv", row.names = FALSE)
-      write.csv(Metadatatable, "www/Metadata.csv", row.names = FALSE)
-      zip(file,
-          files = c("www/Table.csv", "www/Metadata.csv"),
-          extras = '-j')
+      write.xlsx(Metadatatable, file=file, sheetName="Metadata", row.names=FALSE)
+      write.xlsx(Outputtable, file=file, sheetName="Table", append=TRUE, row.names=FALSE)
+
     }
   )
   

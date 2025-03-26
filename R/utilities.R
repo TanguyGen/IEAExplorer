@@ -14,7 +14,7 @@ ggATAC <- function(results,backtransform=FALSE,trend=FALSE,width){
     distinct(year, param, .keep_all = TRUE) %>% 
     pivot_wider(names_from = "param")
   point_size <- max(ceiling(width / 400), 1.5)   # Scale points
-  line_width <- max(ceiling(width / 600), 0.6)   # Scale lines
+  line_width <- max(ceiling(width / 900), 0.6)   # Scale lines
   ribbon_alpha <- min(width / 2000, 0.25)        # Adjust ribbon transparency
   
   gg <- ggplot(data = fit.wide, aes(x = year))
@@ -26,7 +26,7 @@ ggATAC <- function(results,backtransform=FALSE,trend=FALSE,width){
     if (sum(!is.na(fit.wide$prediction)) >= 2) {
       gg <- gg +
         geom_ribbon(aes(ymin = predQ2.5, ymax = predQ97.5), fill = "#104E8B", alpha = ribbon_alpha) +
-        geom_path(aes(y = prediction), col = '#104E8B', lwd = line_width, lty = 2)
+        geom_path(aes(y = prediction), col = '#104E8B', lwd = line_width, lty =  2)
     }
     
     if (sum(!is.na(fit.wide$forecast)) >= 2) {

@@ -1,4 +1,3 @@
 "ID","FullName","unit","category","transformation","AR"
-"SvinoySal","Svinoy-coreS","psu","Climate",FALSE,0
-"LanganesTemp","Temp-Langanes-East7","°C","Climate",FALSE,0
-"ZooBMay","Zooplankton B","dry weight mg.m-2","Ecological",TRUE,0
+"FirstHandPrice_Saithe","Saithe first-hand price","NOK","Sector - Activity - Economy",FALSE,2
+"CatchValue_Bluewhiting","Blue whiting catch value","thousand NOK","Sector - Activity - Economy",FALSE,1
