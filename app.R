@@ -1,3 +1,4 @@
+# Load necessary libraries
 library(shiny)
 library(shinyjs)
 library(tidyr)
@@ -12,41 +13,42 @@ library(shinythemes)
 library(xlsx)
 library(markdown)
 
-initComplete <- JS(
+# Define JavaScript for row hover tooltip
+rowHoverTooltip <- JS(
   "function(settings, json){",
   "  var table = this.api();",
-  "  $('<button id=\"toggle-select-all\" class=\"btn\" style=\"background-color:#1b98e0; color: white; margin: 10px;\">Select All/Unselect All</button>').prependTo($(table.table().container()).find('.dataTables_filter'));",
-  "  var allSelected = false;",
-  "  $('#toggle-select-all').click(function() {",
-  "    allSelected = !allSelected;",
-  "    var filteredRows = table.rows({ filter: 'applied' }).indexes();",
-  "    if (allSelected) {",
-  "      filteredRows.each(function(value) {",
-  "        table.row(value).select();", 
-  "      });",
-  "    } else {",
-  "      filteredRows.each(function(value) {",
-  "        table.row(value).deselect();", 
-  "      });",
+  "  // Create a tooltip div",
+  "  var tooltipDiv = $('<div></div>').attr('id', 'tooltip').css({",
+  "    position: 'absolute',",
+  "    padding: '8px',",
+  "    background: '#eeeeee',",
+  "    border: '1px solid #dddddd',",
+  "    visibility: 'hidden'",
+  "  }).appendTo('body');",
+  
+  "  table.on('mouseover', 'tr', function() {",
+  "    var rowData = table.row(this).data();",
+  "    if (rowData) {",
+  "      $('#tooltip').html('Full name: ' + rowData[0] + '<br>Unit: ' + rowData[1] + '<br>Category: ' + rowData[2]);",
+  "      tooltipDiv.css('visibility', 'visible').fadeIn(100);",
   "    }",
-  "    updateSelectedNames();",
   "  });",
-  "  table.on('select deselect', updateSelectedNames);",
-  "  function updateSelectedNames() {",
-  "    var selectedIndexes = table.rows({ selected: true }).indexes();",
-  "    var selectedNames = selectedIndexes.toArray().map(function(index){",
-  "      return table.row(index).data()[1];",
-  "    });", 
-  "    Shiny.setInputValue('Variables_rows_selected_names', selectedNames);",
-  "  }",
+  
+  "  table.on('mouseout', 'tr', function() {",
+  "    tooltipDiv.css('visibility', 'hidden').fadeOut(100);",
+  "  });",
+  
+  "  table.on('mousemove', function(e) {",
+  "    $('#tooltip').css('top', e.pageY + 10).css('left', e.pageX + 10);",
+  "  });",
+  
   "}"
 )
-
 
 # Load necessary data
 url_github <- "https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"
 load(url(url_github))
-info<-info[-1,]
+info <- info[-1,]
 
 # Extract unique categories excluding NAs for UI creation
 category_choices <- unique(info$Category)
@@ -55,6 +57,7 @@ category_choices <- category_choices[!is.na(category_choices)]
 ui <- fluidPage(
   tags$head(
     includeCSS("www/styles.css"),
+    includeScript("www/scripts.js"),
     tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"),
   ),
   useShinyjs(),
@@ -62,8 +65,7 @@ ui <- fluidPage(
     div(
       class = "header",
       checked = NA,
-      h1(
-      ),
+      h1(),
       h2("IEA Explorer")
     )
   }),
@@ -79,23 +81,23 @@ ui <- fluidPage(
       mainPanel(
         DTOutput("Variables"),
         br(),
-        actionButton("continue", "Continue", class = "btn-success",width=200),
+        actionButton("continue", "Continue", class = "btn-success", width = 200),
         br(),
         br(),
         textOutput("lastUpdate")
       )
     )),
     tabPanel(
-                  "Info",
-                  fluidRow(
-                    includeMarkdown("www/ATAC_description.Rmd"),
-                    br(),
-                    br(),
-                    img(id="img11",src = "ATAC_series_interpretation2023.png", height = 600, width = "100%", class = "responsive-img"),
-                    br(),
-                    br()
-                  )
-                )
+      "Info",
+      fluidRow(
+        includeMarkdown("www/ATAC_description.Rmd"),
+        br(),
+        br(),
+        img(id = "img11", src = "ATAC_series_interpretation2023.png", height = 600, width = "100%", class = "responsive-img"),
+        br(),
+        br()
+      )
+    )
   )
 )
 
@@ -111,7 +113,8 @@ server <- function(input, output, session) {
     rv$selected_ids <- info_filtered$ID
     
     # Select columns for DT
-    info_filtered %>% select(ID,FullName, Unit, Category)  
+    info_filtered %>% select(FullName, Unit, Category) %>%
+      rename(`Full name` = FullName)
   })
   
   rv <- reactiveValues(DataVariables = NULL, selected_ids = NULL, tabsCreated = FALSE)
@@ -119,6 +122,7 @@ server <- function(input, output, session) {
   output$lastUpdate <- renderText({
     paste("Last updated on:", extract_github_commit_date())
   })
+  
   output$Variables <- renderDataTable(server = FALSE, {
     datatable(
       filtered_data(),
@@ -127,7 +131,7 @@ server <- function(input, output, session) {
       selection = 'none',
       options = list(
         select = list(style = "multi"),
-        initComplete = initComplete,
+        initComplete = rowHoverTooltip,
         pageLength = 15,
         autoWidth = TRUE,
         ordering = FALSE
@@ -159,6 +163,7 @@ server <- function(input, output, session) {
                 ),
                 target = "Info", position = "before"
       )
+      
       insertTab(inputId = "menu",
                 tabPanel(
                   "Download",
@@ -174,6 +179,7 @@ server <- function(input, output, session) {
                 ),
                 target = "Info", position = "before"
       )
+      
       updateTabsetPanel(session, "menu", selected = "Graphs")
     }
   })

@@ -22,8 +22,6 @@ div(
 body{
   font-family: 'Manrope', sans-serif;
 }
-
-
 .header {
     color: black;
     display: flex;
@@ -35,6 +33,22 @@ body{
   position: relative;
   top: 0px;
 }
+
+.tooltip {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ddd;
+  padding: 10px;
+  box-shadow: 2px 2px 12px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 1000;
+  display: none;
+}
+
+.tooltip-content {
+  font-size: 14px;
+}
+
 
 div.button{
   text-align: center;
