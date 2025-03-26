@@ -29,7 +29,7 @@ rowHoverTooltip <- JS(
   "  table.on('mouseover', 'tr', function() {",
   "    var rowData = table.row(this).data();",
   "    if (rowData) {",
-  "      $('#tooltip').html('Full name: ' + rowData[0] + '<br>Unit: ' + rowData[1] + '<br>Category: ' + rowData[2]);",
+  "      $('#tooltip').html('Full name: ' + rowData[1] + '<br>Unit: ' + rowData[2] + '<br>Category: ' + rowData[3]);",
   "      tooltipDiv.css('visibility', 'visible').fadeIn(100);",
   "    }",
   "  });",
@@ -48,7 +48,6 @@ rowHoverTooltip <- JS(
 # Load necessary data
 url_github <- "https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"
 load(url(url_github))
-info <- info[-1,]
 
 # Extract unique categories excluding NAs for UI creation
 category_choices <- unique(info$Category)
@@ -57,7 +56,6 @@ category_choices <- category_choices[!is.na(category_choices)]
 ui <- fluidPage(
   tags$head(
     includeCSS("www/styles.css"),
-    includeScript("www/scripts.js"),
     tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"),
   ),
   useShinyjs(),
