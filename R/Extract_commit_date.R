@@ -3,8 +3,8 @@ library(jsonlite)
 
 # Function to fetch and extract last update date from GitHub API
 extract_github_commit_date <- function() {
-  response <- GET(url)
   url= "https://api.github.com/repos/ices-eg/WGINOR/commits?path=TAF_ATAC/output/tables.Rdata"
+  response <- GET(url)
   if (status_code(response) != 200) {
     stop("Failed to retrieve data from GitHub: HTTP Status", status_code(response))
   }

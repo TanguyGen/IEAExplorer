@@ -14,14 +14,14 @@ library(xlsx)
 library(markdown)
 
 # Define JavaScript for row hover tooltip
-rowHoverTooltip <- JS(
+CodeJS <- JS(
   "function(settings, json){",
   "  var table = this.api();",
   "  // Create a tooltip div",
   "  var tooltipDiv = $('<div></div>').attr('id', 'tooltip').css({",
   "    position: 'absolute',",
   "    padding: '8px',",
-  "    background: '#eeeeee',",
+  "    background: 'white',",
   "    border: '1px solid #dddddd',",
   "    visibility: 'hidden'",
   "  }).appendTo('body');",
@@ -29,7 +29,7 @@ rowHoverTooltip <- JS(
   "  table.on('mouseover', 'tr', function() {",
   "    var rowData = table.row(this).data();",
   "    if (rowData) {",
-  "      $('#tooltip').html('Full name: ' + rowData[1] + '<br>Unit: ' + rowData[2] + '<br>Category: ' + rowData[3]);",
+  "      $('#tooltip').html('Description: ' + rowData[4] + '<br>Source: ' + rowData[5]);",
   "      tooltipDiv.css('visibility', 'visible').fadeIn(100);",
   "    }",
   "  });",
@@ -41,9 +41,33 @@ rowHoverTooltip <- JS(
   "  table.on('mousemove', function(e) {",
   "    $('#tooltip').css('top', e.pageY + 10).css('left', e.pageX + 10);",
   "  });",
-  
+  "  var table = this.api();",
+  "  $('<button id=\"toggle-select-all\" class=\"btn\" style=\"background-color:#1b98e0; color: white; margin: 10px;\">Select All/Unselect All</button>').prependTo($(table.table().container()).find('.dataTables_filter'));",
+  "  var allSelected = false;",
+  "  $('#toggle-select-all').click(function() {",
+  "    allSelected = !allSelected;",
+  "    var filteredRows = table.rows({ filter: 'applied' }).indexes();",
+  "    if (allSelected) {",
+  "      filteredRows.each(function(value) {",
+  "        table.row(value).select();", 
+  "      });",
+  "    } else {",
+  "      filteredRows.each(function(value) {",
+  "        table.row(value).deselect();", 
+  "      });",
+  "    }",
+  "    var selectedNames = filteredRows.toArray().map(function(index){",
+  "      var name = table.row(index).data()[0];",
+  "      console.log('Row Name:', name);",
+  "      return name;",
+  "    });", 
+  "    console.log('Selected Names:', selectedNames);",
+  "    Shiny.setInputValue('Variables_rows_selected_names', selectedNames);", 
+  "  });",
   "}"
 )
+
+
 
 # Load necessary data
 url_github <- "https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"
@@ -111,7 +135,7 @@ server <- function(input, output, session) {
     rv$selected_ids <- info_filtered$ID
     
     # Select columns for DT
-    info_filtered %>% select(FullName, Unit, Category) %>%
+    info_filtered %>% select(FullName, Unit, Category,Description,Source) %>%
       rename(`Full name` = FullName)
   })
   
@@ -129,10 +153,13 @@ server <- function(input, output, session) {
       selection = 'none',
       options = list(
         select = list(style = "multi"),
-        initComplete = rowHoverTooltip,
+        initComplete = CodeJS,
         pageLength = 15,
         autoWidth = TRUE,
-        ordering = FALSE
+        ordering = FALSE,
+        columnDefs = list(
+          list(visible = FALSE, targets = c(4,5))  # Hide columns (Age, Email, SecretInfo)
+        )
       )
     )
   })
@@ -142,7 +169,7 @@ server <- function(input, output, session) {
     
     # Use selected indices to get corresponding IDs
     selected_ids <- rv$selected_ids[as.integer(input$Variables_rows_selected)]
-    
+    print(selected_ids)
     rv$DataVariables <- table.all[selected_ids]  # Use IDs for data extraction
     
     Years <- unlist(lapply(rv$DataVariables, function(df) df$year))
@@ -198,18 +225,14 @@ server <- function(input, output, session) {
         if (is_tibble(data_item) && ncol(data_item) >= 2) {
           ggATAC(result = data_item, width = width) +
             xlim(c(1980, NA)) +
-            ggtitle(paste0(info_item$FullName,
-                           "\nData transformation: ", info_item$Transformation,
-                           "\nAutoregressive process: AR(", info_item$AR, ")")) +
+            ggtitle(paste0(info_item$FullName)) +
             ylab(paste0("Units: ", info_item$Unit)) +
             theme(plot.title = element_text(size = title_size),
                   axis.title = element_text(size = axistitle_size, face = "bold"),
                   axis.text = element_text(size = text_size))
         } else {
           ggplot() +
-            ggtitle(paste0(info_item$FullName,
-                           "\nData transformation: ", info_item$Transformation,
-                           "\nAutoregressive process: AR(", info_item$AR, ")")) +
+            ggtitle(paste0(info_item$FullName)) +
             theme(plot.title = element_text(size = title_size),
                   axis.title = element_text(size = axistitle_size, face = "bold"),
                   axis.text = element_text(size = text_size))
