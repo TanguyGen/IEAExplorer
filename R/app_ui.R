@@ -5,53 +5,50 @@
 #' @import shiny
 #' @noRd
 app_ui <- function(request) {
-  tagList(
-    # Leave this function for adding external resources
-    golem_add_external_resources(),
-    # Your application UI logic
-    fluidPage(
-      tags$head(
-        includeCSS("www/styles.css"),
-        tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"),
+  golem_add_external_resources()
+  fluidPage(
+    tags$head(
+      includeCSS(app_sys("app/www/styles.css")),
+      tags$script(src = "www/initComplete.js"),
+      tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap")
+    ),
+    withTags({
+      div(
+        class = "header",
+        checked = NA,
+        h1(),
+        h2("IEA Explorer")
+      )
+    }),
+    navbarPage(
+      "Menu",
+      id = "menu",
+      tabPanel("Ecoregions and Variables",
+                      sidebarLayout(
+                        sidebarPanel(
+                          img(src = "www/Map_Norwegian_Sea.svg", height = 400, width = "100%", class = "responsive-img"),
+                          br(),
+                          checkboxGroupInput("selected_categories", "Select Categories:", choices = NULL)
+                        ),
+                        mainPanel(
+                          DT::DTOutput("Variables"),
+                          br(),
+                          actionButton("continue", "Continue", class = "btn-success", width = 200),
+                          br(),
+                          br(),
+                          textOutput("lastUpdate")
+                        )
+                      )
       ),
-      useShinyjs(),
-      withTags({
-        div(
-          class = "header",
-          checked = NA,
-          h1(),
-          h2("IEA Explorer")
-        )
-      }),
-      navbarPage(
-        "Menu",
-        id = "menu",
-        tabPanel("Ecoregions and Variables", sidebarLayout(
-          sidebarPanel(
-            img(src = "Map_Norwegian_Sea.svg", height = 400, width = "100%", class = "responsive-img"),
-            br(),
-            checkboxGroupInput("selected_categories", "Select Categories:", choices = category_choices, selected = category_choices),
-          ),
-          mainPanel(
-            DTOutput("Variables"),
-            br(),
-            actionButton("continue", "Continue", class = "btn-success", width = 200),
-            br(),
-            br(),
-            textOutput("lastUpdate")
-          )
-        )),
-        tabPanel(
-          "How to read the graph?",
-          fluidRow(
-            includeMarkdown("www/ATAC_description.Rmd"),
-            br(),
-            br(),
-            img(id = "img11", src = "ATAC_series_interpretation2023.png", height = 600, width = "100%", class = "responsive-img"),
-            br(),
-            br()
-          )
-        )
+      tabPanel("Info",
+                      fluidRow(
+                        htmltools::includeMarkdown("inst/app/www/ATAC_description.Rmd"),
+                        br(),
+                        br(),
+                        img(id = "img11", src = "www/ATAC_series_interpretation2023.png", height = 600, width = "100%", class = "responsive-img"),
+                        br(),
+                        br()
+                      )
       )
     )
   )
@@ -77,7 +74,5 @@ golem_add_external_resources <- function() {
       path = app_sys("app/www"),
       app_title = "ieaexplorer"
     )
-    # Add here other external resources
-    # for example, you can add shinyalert::useShinyalert()
   )
 }
