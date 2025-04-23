@@ -10,9 +10,11 @@
 
 ggATAC <- function(results,backtransform=FALSE,trend=FALSE,width){
   if (backtransform==TRUE) results$value<-results$value^4
+
   fit.wide <- results %>% 
     distinct(year, param, .keep_all = TRUE) %>% 
     pivot_wider(names_from = "param")
+  
   point_size <- max(ceiling(width / 800), 1.5)   # Scale points
   line_width <- max(ceiling(width / 1200), 0.6)   # Scale lines
   ribbon_alpha <- min(width / 2000, 0.25)        # Adjust ribbon transparency
