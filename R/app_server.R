@@ -76,9 +76,8 @@ app_server <- function(input, output, session) {
                                                  mainPanel(fluidRow(downloadButton("CSV", label = "Download xlsx file")))
                                                )
       ), target = "Info", position = "before")
-      
-      updateTabsetPanel(session, "menu", selected = "Graphs")
     }
+    updateTabsetPanel(session, "menu", selected = "Graphs")
   })
   
   output$Graphs <- renderPlot({
