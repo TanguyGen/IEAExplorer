@@ -20,9 +20,9 @@ app_server <- function(input, output, session) {
   rv <- reactiveValues(DataVariables = NULL, selected_ids = NULL, tabsCreated = FALSE)
   # Load data
   url_github <- "https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"
-  base::load(base::url(url_github))
+  load(url(url_github))
   
-  updateCheckboxGroupInput(session, "selected_categories", choices = base::unique(stats::na.omit(info$Category)), selected = base::unique(stats::na.omit(info$Category)))
+  updateCheckboxGroupInput(session, "selected_categories", choices = unique(stats::na.omit(info$Category)), selected = unique(stats::na.omit(info$Category)))
   
   filtered_data <- reactive({
     req(input$selected_categories)
@@ -64,12 +64,12 @@ app_server <- function(input, output, session) {
   
   observeEvent(input$continue, {
     req(input$Variables_rows_selected)
-    selected_ids <- rv$selected_ids[base::as.integer(input$Variables_rows_selected)]
+    selected_ids <- rv$selected_ids[as.integer(input$Variables_rows_selected)]
     rv$DataVariables <- table.all[selected_ids]
     
-    Years <- base::unlist(base::lapply(rv$DataVariables, function(df) df$year))
-    min_year <- base::min(Years)
-    max_year <- base::max(Years)
+    Years <- unlist(lapply(rv$DataVariables, function(df) df$year))
+    min_year <- min(Years)
+    max_year <- max(Years)
     
     if (!rv$tabsCreated) {
       rv$tabsCreated <- TRUE
@@ -113,63 +113,65 @@ app_server <- function(input, output, session) {
     session$sendCustomMessage(type = "toggle-spinner", message = "hide")
     selected_data <- rv$DataVariables
     width <- session$clientData$output_Graphs_width
-    title_size <- base::max(base::ceiling(width / 50), 16)
-    axistitle_size <- base::max(base::ceiling(width / 60), 12)
-    text_size <- base::max(base::ceiling(width / 80), 12)
+    title_size <- max(ceiling(width / 50), 16)
+    axistitle_size <- max(ceiling(width / 60), 12)
+    text_size <- max(ceiling(width / 80), 12)
     
-    if (!base::is.null(selected_data) && base::length(selected_data) > 0) {
-      plotlist <- base::lapply(base::names(selected_data), function(id) {
+    if (!is.null(selected_data) && length(selected_data) > 0) {
+      plotlist <- lapply(names(selected_data), function(id) {
         data_item <- selected_data[[id]]
         info_item <- info[info$ID == id, ]
         
-        if (tibble::is_tibble(data_item) && base::ncol(data_item) >= 2) {
+        if (tibble::is_tibble(data_item) && ncol(data_item) >= 2) {
           ggATAC(result = data_item, width = width) +
             xlim(c(1980, NA)) +
-            ggtitle(info_item$FullName) +
+            ggtitle(stringr::str_wrap(info_item$FullName, width = 30))+
             ylab(info_item$Unit) +
+            xlab("Year") +
             theme(
-              plot.title = element_text(size = title_size),
+              plot.title = element_text(size = title_size,hjust = 0.5),
               axis.title = element_text(size = axistitle_size, face = "bold"),
               axis.text = element_text(size = text_size)
             )
         } else {
           ggplot() +
-            ggtitle(info_item$FullName) +
+            ggtitle(stringr::str_wrap(info_item$FullName, width = 30)) +
             theme(
-              plot.title = element_text(size = title_size),
+              plot.title = element_text(size = title_size,hjust = 0.5),
               axis.title = element_text(size = axistitle_size, face = "bold"),
               axis.text = element_text(size = text_size)
-            )
+            )+
+            xlab("Year") 
         }
       })
       
-      if (!base::is.null(plotlist) && base::length(plotlist) > 0) {
-        n <- base::length(plotlist)
-        numrow <- base::ceiling(n / 2)
-        base::do.call(gridExtra::grid.arrange, list(grobs = plotlist, nrow = numrow))
+      if (!is.null(plotlist) && length(plotlist) > 0) {
+        n <- length(plotlist)
+        numrow <- ceiling(n / 2)
+        do.call(gridExtra::grid.arrange, list(grobs = plotlist, nrow = numrow))
       }
     }
   }, height = reactive({
     width <- session$clientData$output_Graphs_width
-    num_plots <- base::length(rv$DataVariables)
-    if (base::is.null(width)) return(400)
+    num_plots <- length(rv$DataVariables)
+    if (is.null(width)) return(400)
     if (num_plots == 0) return(400)
     plot_height <- width * 1 / 3
-    total_height <- plot_height * base::ceiling(num_plots / 2)
+    total_height <- plot_height * ceiling(num_plots / 2)
     return(total_height)
   }))
   
   output$CSV <- downloadHandler(
     filename = function() {
-      paste0("Data_", base::format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), ".xlsx")
+      paste0("Data_", format(Sys.time(), "%Y-%m-%d_%H-%M-%S"), ".xlsx")
     },
     content = function(file) {
-      years <- base::as.numeric(input$yearRange)
+      years <- as.numeric(input$yearRange)
       selected_data <- rv$DataVariables
       modified_data <- list()
       metadata <- list()
       
-      for (id in base::names(selected_data)) {
+      for (id in names(selected_data)) {
         data_item <- selected_data[[id]]
         if (!data.table::is.data.table(data_item)) {
           data_item <- data.table::as.data.table(data_item)
