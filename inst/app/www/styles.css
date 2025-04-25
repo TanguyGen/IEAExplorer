@@ -162,17 +162,13 @@ td.select-checkbox::before {
   position: relative;
 }
 
-
 /* Bigger checkmark */
 tr.selected td.select-checkbox::after {
   width: 6px;
   height: 5px;
   left: 9px;
   top: 5px;
+  color: #006494;
   border-width: 0 3px 3px 0;
 }
 
-/* Fill background when selected */
-tr.selected td.select-checkbox::before {
-  background-color: #006494;
-}

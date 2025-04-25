@@ -75,17 +75,35 @@ app_server <- function(input, output, session) {
       rv$tabsCreated <- TRUE
       insertTab("menu", tabPanel("Graphs",
                                                fluidRow(
-                                                 column(12, shinycssloaders::withSpinner(plotOutput("Graphs", height = "600px"), type = 8, image = "www/rotating_fish.gif", id = "spinner-custom"))
+                                                 column(12, shinycssloaders::withSpinner(plotOutput("Graphs", height = "600px"), type = 6))
                                                )
       ), target = "Info", position = "before")
       
-      insertTab("menu", tabPanel("Download",
-                                               sidebarLayout(
-                                                 sidebarPanel(
-                                                   sliderInput("yearRange", "Select Year Range:", min = min_year, max = max_year, value = c(min_year, max_year), step = 1, sep = "", width = "100%")
-                                                 ),
-                                                 mainPanel(fluidRow(downloadButton("CSV", label = "Download xlsx file")))
-                                               )
+      insertTab("menu", tabPanel(
+        "Download",
+        fluidRow(
+          column(
+            width = 2,
+            br(),
+            downloadButton("CSV", label = "Download", class = "btn btn-lg btn-primary", style = "width: 100%")
+          ),
+          column(
+            width = 10,
+            sliderInput(
+              "yearRange", "Select Year Range:",
+              min = min_year, max = max_year,
+              value = c(min_year, max_year),
+              step = 1, sep = "", width = "100%"
+            )
+          )
+        ),
+        br(),
+        fluidRow(
+          column(
+            width = 8, offset = 2,
+            DT::dataTableOutput("selectedVarsTable")
+          )
+        )
       ), target = "Info", position = "before")
     }
     updateTabsetPanel(session, "menu", selected = "Graphs")
@@ -168,4 +186,17 @@ app_server <- function(input, output, session) {
       xlsx::write.xlsx(Outputtable, file = file, sheetName = "Table", append = TRUE, row.names = FALSE)
     }
   )
+  
+  output$selectedVarsTable <- DT::renderDataTable({
+    req(rv$DataVariables)
+    info %>%
+      filter(ID %in% names(rv$DataVariables)) %>%
+      select(FullName, Unit, Description, Source) %>%
+      rename(
+        `Full name` = FullName,
+        `Units` = Unit,
+        `Description` = Description,
+        `Source` = Source
+      )
+  })
 }
