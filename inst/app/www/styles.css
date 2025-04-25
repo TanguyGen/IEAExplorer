@@ -129,3 +129,49 @@ div.button{
     color: white !important;
     outline: none !important;
 }
+
+table.dataTable tbody tr.selected td,
+table.dataTable tbody td.selected {
+    border-top-color: white !important;
+    box-shadow: inset 0 0 0 9999px #1B98E0 !important;
+}
+
+table.dataTable tbody tr:active td {
+    background-color: #1B98E0 !important;
+}
+
+:root {
+    --dt-row-selected: transparent !important;
+}
+
+table.dataTable tbody tr:hover, table.dataTable tbody tr:hover td {
+    background-color: #1B98E0 !important;
+}
+
+/* Remove default checkmark */
+td.select-checkbox::before {
+  border: 2px solid #1B98E0;
+  background-color: white;
+}
+/* Optional: add a checkmark using CSS */
+.select-checkbox:checked::before {
+  content: '✔';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #006494;
+}
+
+
+
+/* Bigger checkmark */
+tr.selected td.select-checkbox::after {
+  width: 6px;
+  height: 5px;
+  left: 9px;
+  top: 5px;
+  color: #006494;
+  border-width: 0 3px 3px 0;
+}
+
