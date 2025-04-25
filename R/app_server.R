@@ -126,7 +126,7 @@ app_server <- function(input, output, session) {
           ggATAC(result = data_item, width = width) +
             xlim(c(1980, NA)) +
             ggtitle(info_item$FullName) +
-            ylab(paste0("Units: ", info_item$Unit)) +
+            ylab(info_item$Unit) +
             theme(
               plot.title = element_text(size = title_size),
               axis.title = element_text(size = axistitle_size, face = "bold"),
