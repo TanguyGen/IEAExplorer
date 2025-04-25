@@ -7,6 +7,7 @@
 #' @import dplyr
 #' @import tidyr
 #' @import markdown
+#' @import tibble
 #' @importFrom DT datatable renderDataTable
 #' @importFrom shinycssloaders withSpinner
 #' @importFrom gridExtra grid.arrange
@@ -35,8 +36,14 @@ app_server <- function(input, output, session) {
   })
   
   output$Variables <- DT::renderDataTable(server = FALSE, {
+    
+    data <- filtered_data()
+    
+    data<-data%>% 
+      add_column(" " = "", .before = 1)
+    
     DT::datatable(
-      filtered_data(),
+      data,
       escape = FALSE,
       extensions = "Select",
       selection = 'none',
@@ -46,7 +53,11 @@ app_server <- function(input, output, session) {
         pageLength = 15,
         autoWidth = TRUE,
         ordering = FALSE,
-        columnDefs = list(list(visible = FALSE, targets = c(4, 5)))
+        rownames=FALSE,
+        columnDefs = list(
+          list(visible = FALSE, targets = c(0,4, 5)),
+          list(orderable = TRUE, className = 'select-checkbox', targets = 1)
+                          )
       )
     )
   })
