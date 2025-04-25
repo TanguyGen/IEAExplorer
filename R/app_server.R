@@ -75,7 +75,7 @@ app_server <- function(input, output, session) {
       rv$tabsCreated <- TRUE
       insertTab("menu", tabPanel("Graphs",
                                                fluidRow(
-                                                 column(12, shinycssloaders::withSpinner(plotOutput("Graphs", height = "600px"), type = 8, image = "www/rotating_fish.gif", id = "spinner-custom"))
+                                                 column(12, shinycssloaders::withSpinner(plotOutput("Graphs", height = "600px"), type = 6))
                                                )
       ), target = "Info", position = "before")
       
