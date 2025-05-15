@@ -20,15 +20,20 @@
 ##
 golem::fill_desc(
   pkg_name = "ieaexplorer", # The name of the golem package containing the app (typically lowercase, no underscore or periods)
-  pkg_title = "PKG_TITLE", # What the Package Does (One Line, Title Case, No Period)
-  pkg_description = "PKG_DESC.", # What the package does (one paragraph).
-  authors = person(
-    given = "AUTHOR_FIRST", # Your First Name
-    family = "AUTHOR_LAST", # Your Last Name
-    email = "AUTHOR@MAIL.COM", # Your email
+  pkg_title = "IEAEXPLORER", # What the Package Does (One Line, Title Case, No Period)
+  pkg_description = "Read the RDAta from the summaries from IEANor", # What the package does (one paragraph).
+  authors = c(person(
+    given = "Tanguy", # Your First Name
+    family = "Genthon", # Your Last Name
+    email = "tanguy.genthon@hi.no", # Your email
     role = c("aut", "cre") # Your role (here author/creator)
+  ),person(
+    given = "Benjamin", # Your First Name
+    family = "Planque", # Your Last Name
+    role = c("aut")
+  )
   ),
-  repo_url = NULL, # The URL of the GitHub repo (optional),
+  repo_url = "https://github.com/TanguyGen/Shiny_WGINOR", # The URL of the GitHub repo (optional),
   pkg_version = "0.0.0.9000", # The version of the package containing the app
   set_options = TRUE # Set the global golem options
 )
