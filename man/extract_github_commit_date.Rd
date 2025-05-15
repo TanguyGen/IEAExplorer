@@ -4,23 +4,17 @@
 \alias{extract_github_commit_date}
 \title{Extract the Last Commit Date of a Specific File from a GitHub Repository}
 \usage{
-extract_github_commit_date(token = NULL)
-}
-\arguments{
-\item{token}{Optional. A GitHub personal access token (character string) to authenticate the request.
-This helps avoid rate limiting by the GitHub API.}
+extract_github_commit_date()
 }
 \value{
-A character string in the format \code{"dd/mm/yyyy"} representing the last commit date,
+A character string in the format \code{"Last updated on: dd/mm/yyyy"} representing the last commit date,
         or \code{NULL} if the request fails or the structure is unexpected.
 }
 \description{
 This function queries the GitHub API to retrieve the most recent commit date
-of a specified file within a repository. It optionally uses a GitHub personal
-access token to avoid rate limiting.
+If an error occurs, the function returns \code{NULL}.
 }
 \examples{
 extract_github_commit_date()
-extract_github_commit_date("your_token_here")
 
 }
