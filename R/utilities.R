@@ -1,7 +1,6 @@
 # utilities
-#' ## The 2 main functions: ATAC (modelling) and ggATAC (plotting)
-#' Modelling is done with the [BRMS package](https://paul-buerkner.github.io/brms/)
-#' Plotting is done using the [ggplot2 package](https://ggplot2.tidyverse.org)
+#' ## The function ggATAC from https://github.com/ices-eg/WGINOR/blob/main/TAF_ATAC/
+#' The plotting is done using the [ggplot2 package](https://ggplot2.tidyverse.org)
 #' data = dataset with two columns: year and value
 #' year_start = first year that is be used when fitting the models
 #' year_end_trend = last year that is used when fitting the overall trend model (using all observations). By default this is the last year of the series
