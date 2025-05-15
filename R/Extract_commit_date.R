@@ -18,7 +18,7 @@ extract_github_commit_date <- function() {
   url= "https://api.github.com/repos/ices-eg/WGINOR/commits?path=TAF_ATAC/output/tables.Rdata"
   response <- GET(url)
   if (status_code(response) != 200) {
-    message("Failed to retrieve data from GitHub: HTTP Status", status_code(response))
+    message("Failed to retrieve data from GitHub: HTTP Status ", status_code(response))
     return(NULL)
   }
   
@@ -30,7 +30,7 @@ extract_github_commit_date <- function() {
     # Extract the date from the first row corresponding commit's committer's date
     last_commit_date <- parsed_data$commit.committer.date[1]
     last_commit_date <- as.POSIXct(last_commit_date, format = "%Y-%m-%dT%H:%M:%OSZ", tz = "UTC")
-    return(paste("Last updated on: ", extract_github_commit_date()))  # Format as "Month-Year"
+    return(paste("Last updated on:", format(last_commit_date, "%d/%m/%Y")))
   } else {
     message("Unexpected structure from GitHub API")
     return(NULL)

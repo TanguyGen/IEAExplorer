@@ -43,13 +43,16 @@ app_server <- function(input, output, session) {
     }
   })
   
-  #Update the checkbox category options with the categories from the info object
-  updateCheckboxGroupInput(
-    session,
-    "selected_categories",
-    choices = unique(stats::na.omit(info$Category)),
-    selected = unique(stats::na.omit(info$Category))
-  )
+  observe({
+    req(data$info)  # Ensures data$info is available
+    
+    updateCheckboxGroupInput(
+      session,
+      "selected_categories",
+      choices = unique(stats::na.omit(data$info$Category)),
+      selected = unique(stats::na.omit(data$info$Category))
+    )
+  })
   
   
   rv <- reactiveValues(
@@ -254,6 +257,7 @@ app_server <- function(input, output, session) {
     content = function(file) {
       years <- as.numeric(input$yearRange)
       selected_data <- rv$DataVariables
+      info<-data$info
       modified_data <- list()
       metadata <- list()
       
