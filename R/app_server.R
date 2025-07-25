@@ -18,7 +18,7 @@
 #'
 app_server <- function(input, output, session) {
   data <- reactiveValues(table.all = NULL, info = NULL)
-  rv <- reactiveValues(DataVariables = NULL, selected_ids = NULL, tabsCreated = FALSE)
+  rv <- reactiveValues(DataVariables = NULL, selected_ids = NULL)
   Time_limit <- reactiveValues(min_year = NULL, max_year = NULL)
   
   # Load data once
@@ -90,26 +90,10 @@ app_server <- function(input, output, session) {
   # Insert tabs on continue button
   observeEvent(input$continue, {
     req(input$Variables_rows_selected)
-    if (!rv$tabsCreated) {
-      rv$tabsCreated <- TRUE
-      
-      insertTab("menu", tabPanel("Graphs",
-                                 fluidRow(column(12, shinycssloaders::withSpinner(plotOutput("Graphs", height = "600px"), type = 6))),
-      ), target = "Info", position = "before")
-      
-      insertTab("menu", tabPanel("Download",
-                                 fluidRow(
-                                   column(2, br(), downloadButton("CSV", "Download", class = "btn btn-lg btn-primary", style = "width: 100%")),
-                                   column(10, sliderInput("yearRange", "Select Year Range:",
-                                                          min = Time_limit$min_year, max = Time_limit$max_year,
-                                                          value = c(Time_limit$min_year, Time_limit$max_year), step = 1, sep = "", width = "100%"))
-                                 ),
-                                 br(),
-                                 fluidRow(column(8, offset = 2, DT::dataTableOutput("selectedVarsTable")))
-      ), target = "Info", position = "before")
-    }
+    
     updateTabsetPanel(session, "menu", selected = "Graphs")
   })
+  
   
   # Update slider input dynamically
   observeEvent(list(Time_limit$min_year, Time_limit$max_year), {
@@ -224,4 +208,13 @@ app_server <- function(input, output, session) {
         `Source` = Source
       )
   })
+  
+  #----TUTORIAL----
+  
+  observeEvent(input$help,
+               introjs(session, options = list("nextLabel"="Continue",
+                                               "prevLabel"="Back",
+                                               "skipLabel"="Skip the tutorial"),
+                       events = list("onbeforechange" = readCallback("switchTabs")))
+  )
 }
