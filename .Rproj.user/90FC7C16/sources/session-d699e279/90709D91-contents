@@ -119,13 +119,13 @@ app_ui <- function(request) {
         "Info",
         introBox(
           fluidRow(
-            htmltools::includeMarkdown("inst/app/www/ATAC_description.Rmd"), # Include Markdown description
+            htmltools::includeMarkdown(system.file("app/www/ATAC_description.Rmd", package="IEAExplorer")), # Include Markdown description
             br(),
             br(),
             img(
               # Series interpretation image
               id = "img11",
-              src = "www/ATAC_series_interpretation2023.png",
+              src = system.file("app/www/ATAC_series_interpretation2023.png", package="IEAExplorer"),
               height = 600,
               width = "80%",
               class = "responsive-img"
