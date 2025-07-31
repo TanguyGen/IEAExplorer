@@ -119,7 +119,7 @@ app_ui <- function(request) {
         "Info",
         introBox(
           fluidRow(
-            htmltools::includeMarkdown(system.file("app/www/ATAC_description.Rmd", package="IEAExplorer")), # Include Markdown description
+            htmltools::includeMarkdown(system.file("app/www/ATAC_description.Rmd", package="ieaexplorer")), # Include Markdown description
             br(),
             br(),
             img(
