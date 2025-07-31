@@ -34,14 +34,6 @@ app_ui <- function(request) {
         "Variables",
         sidebarLayout(
           sidebarPanel(
-            img(
-              # Map image shown in sidebar
-              src = "www/Map_Norwegian_Sea.svg",
-              height = 400,
-              width = "100%",
-              class = "responsive-img"
-            ),
-            br(),
             introBox(
             checkboxGroupInput("selected_categories", "Select Categories:", choices = NULL),
             data.step = 2,
@@ -114,7 +106,7 @@ app_ui <- function(request) {
                    data.intro = "Select the type of data you want to download."
                    )
             ),
-            column(10, offset = 2,
+            column(10,
                    DT::dataTableOutput("selectedVarsTable")
             )
           ),
@@ -135,7 +127,7 @@ app_ui <- function(request) {
               id = "img11",
               src = "www/ATAC_series_interpretation2023.png",
               height = 600,
-              width = "100%",
+              width = "80%",
               class = "responsive-img"
             ),
             br(),
