@@ -1,4 +1,4 @@
-# utilities
+# ggATAC.R
 #' ## The function ggATAC from https://github.com/ices-eg/WGINOR/blob/main/TAF_ATAC/
 #' The plotting is done using the [ggplot2 package](https://ggplot2.tidyverse.org)
 #' data = dataset with two columns: year and value
