@@ -34,6 +34,8 @@ app_ui <- function(request) {
         "Variables",
         sidebarLayout(
           sidebarPanel(
+            withSpinner(leaflet::leafletOutput("map1", width = "100%")),
+            br(),
             introBox(
             checkboxGroupInput("selected_categories", "Select Categories:", choices = NULL),
             data.step = 2,

@@ -21,6 +21,7 @@ Imports:
     shiny,
     shinycssloaders,
     shinythemes,
+    shinyWidgets,
     tibble,
     tidyr,
     xlsx

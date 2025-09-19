@@ -177,3 +177,7 @@ tr.selected td.select-checkbox::after {
   color: white;
 }
 
+.leaflet-container {
+    background: white;
+    outline: 0;
+}

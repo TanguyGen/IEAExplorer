@@ -35,6 +35,8 @@ app_server <- function(input, output, session) {
     }
   })
   
+  map_panel_server(input, output, session)
+  
   # Update category checkbox choices
   observeEvent(data$info, {
     updateCheckboxGroupInput(session, "selected_categories",
