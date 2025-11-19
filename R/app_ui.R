@@ -45,7 +45,7 @@ app_ui <- function(request) {
           ),
           mainPanel(
             introBox(
-            DT::DTOutput("Variables"), # Add interactive table of variables
+              withSpinner(DT::DTOutput("Variables")), # Add interactive table of variables
             data.step = 1,
             data.intro = "Select here one or more variables you want to look at. You can click on Select All to select all variables from the displayed table."
             ),

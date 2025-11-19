@@ -15,7 +15,16 @@
 #' @export
 
 extract_github_commit_date <- function() {
-  url= "https://api.github.com/repos/ices-eg/WGINOR/commits?path=TAF_ATAC/output/tables.Rdata"
+  req(selected_country())
+  selected_country <- selected_country()
+  
+  if (selected_country=="Norwegian Sea"){
+    url= "https://api.github.com/repos/ices-eg/WGINOR/commits?path=TAF_ATAC/output/tables.Rdata"
+  }else if (selected_country=="Icelandic Waters"){
+    return(NULL)
+  }else{
+    return(NULL)
+  }
   response <- GET(url)
   if (status_code(response) != 200) {
     message("Failed to retrieve data from GitHub: HTTP Status ", status_code(response))

@@ -1,10 +1,10 @@
-name: shiny_wginor
+name: ieaexplorer
 title:
 username: tanguygen
 account: tanguygen
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 14332868
-bundleId: 11201575
-url: https://tanguygen.shinyapps.io/shiny_wginor/
+appId: 15944352
+bundleId: 11122657
+url: https://tanguygen.shinyapps.io/ieaexplorer/
 version: 1

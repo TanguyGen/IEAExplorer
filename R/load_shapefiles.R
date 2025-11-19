@@ -8,7 +8,7 @@
 #' 
 load_shape_europe <- function(){
   
-  eu_shape <- st_read(dsn = "inst/app/www/Shapefiles/shape_eu", 
+  eu_shape <- sf::st_read(dsn = "inst/app/www/Shapefiles/shape_eu", 
                       layer = "world_map_simplified", quiet=TRUE)
   return(eu_shape)
 }
@@ -30,7 +30,7 @@ load_shape_europe <- function(){
 #' @export
 #'
 load_shape_ecoregions <- function(){
-  shape_eco <- st_read(dsn = "inst/app/www/Shapefiles/shape_ecoregion", 
+  shape_eco <- sf::st_read(dsn = "inst/app/www/Shapefiles/shape_ecoregion", 
                        layer = "shape_eco_simplified", quiet=TRUE)
   
   

@@ -21,21 +21,48 @@ app_server <- function(input, output, session) {
   rv <- reactiveValues(DataVariables = NULL, selected_ids = NULL)
   Time_limit <- reactiveValues(min_year = NULL, max_year = NULL)
   
-  # Load data once
-  observe({
-    if (is.null(data$table.all)) {
-      e <- new.env()
-      load(url("https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"), envir = e)
-      if (length(ls(envir = e)) != 2) {
-        showNotification("Default RData must contain two objects.", type = "error")
-        return()
-      }
-      data$info <- e$info
-      data$table.all <- e$table.all
-    }
-  })
+  selected_country <- map_panel_server(input, output, session)
   
-  map_panel_server(input, output, session)
+  observeEvent(selected_country(), {
+    region <- selected_country()
+    req(region)
+    
+    # Determine source file dynamically
+    data_source <- switch(region,
+                          "Norwegian Sea" = 
+                            url("https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"),
+                          "Icelandic Waters" =
+                            "inst/app/www/Iceland/tables.Rdata",
+                          NULL)
+    
+    req(data_source)
+    
+    # Load fresh data every time region changes
+    e <- new.env()
+    
+    tryCatch(
+      {
+        load(data_source, envir = e)
+        TRUE
+      },
+      error = function(e) {
+        showNotification(
+          paste("Error loading:", basename(data_source), "-", e$message),
+          type = "error",
+          duration = 7
+        )
+        FALSE
+      }
+    )
+    
+    if (length(ls(e)) != 2) {
+      showNotification("RData must contain two objects: info and table.all", type = "error")
+      return()
+    }
+    
+    data$info      <- e$info
+    data$table.all <- e$table.all
+  })
   
   # Update category checkbox choices
   observeEvent(data$info, {
@@ -54,10 +81,17 @@ app_server <- function(input, output, session) {
       dplyr::rename(`Full name` = FullName)
   })
   
-  output$lastUpdate <- renderText({ extract_github_commit_date() })
+  output$lastUpdate <- renderText({ 
+    req(input$selected_locations)
+    extract_github_commit_date() })
   
   output$Variables <- DT::renderDataTable({
-    dat <- filtered_data() %>% tibble::add_column(" " = "", .before = 1)
+    if(length(input$selected_categories>0)){
+      dat <- filtered_data() %>% tibble::add_column(" " = "", .before = 1)
+    }else{
+      dat <- data.frame(FullName=NA, Unit=NA, Category=NA, Description=NA, Source=NA) %>% tibble::add_column(" " = "", .before = 1)
+    }
+    
     DT::datatable(
       dat,
       escape = FALSE,
@@ -67,7 +101,7 @@ app_server <- function(input, output, session) {
         select = list(style = "multi"),
         initComplete = DT::JS("initTooltipJS"),
         pageLength = 15,
-        autoWidth = TRUE,
+        autoWidth = FALSE,
         ordering = FALSE,
         rownames = FALSE,
         columnDefs = list(
@@ -108,6 +142,7 @@ app_server <- function(input, output, session) {
   
   # Render graphs based on selected data
   output$Graphs <- renderPlot({
+    req(rv$DataVariables)
     selected_data <- rv$DataVariables
     req(selected_data)
     
