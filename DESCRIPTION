@@ -16,8 +16,11 @@ Imports:
     golem,
     gridExtra,
     httr,
+    later,
+    leaflet,
     markdown,
     pkgload,
+    rintrojs,
     sf,
     shiny,
     shinycssloaders,
@@ -29,6 +32,7 @@ Imports:
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
+Config/rsconnect.ignore.packages: TRUE
 URL: https://github.com/TanguyGen/IEAExplorer
 BugReports: https://github.com/TanguyGen/IEAExplorer/issues
 Suggests: 

@@ -5,6 +5,6 @@ account: tanguygen
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14332868
-bundleId: 11201669
+bundleId: 11202696
 url: https://tanguygen.shinyapps.io/shiny_wginor/
 version: 1

@@ -8,6 +8,7 @@
 #' @import tidyr
 #' @import markdown
 #' @import tibble
+#' @import leaflet
 #' @importFrom DT datatable renderDataTable
 #' @importFrom shinycssloaders withSpinner
 #' @importFrom gridExtra grid.arrange
@@ -24,44 +25,27 @@ app_server <- function(input, output, session) {
   selected_country <- map_panel_server(input, output, session)
   
   observeEvent(selected_country(), {
+    
     region <- selected_country()
-    req(region)
     
-    # Determine source file dynamically
-    data_source <- switch(region,
-                          "Norwegian Sea" = 
-                            url("https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata"),
-                          "Icelandic Waters" =
-                            "inst/app/www/Iceland/tables.Rdata",
-                          NULL)
-    
-    req(data_source)
-    
-    # Load fresh data every time region changes
-    e <- new.env()
-    
-    tryCatch(
-      {
-        load(data_source, envir = e)
-        TRUE
-      },
-      error = function(e) {
-        showNotification(
-          paste("Error loading:", basename(data_source), "-", e$message),
-          type = "error",
-          duration = 7
-        )
-        FALSE
+    # defer heavy work
+    later::later(function() {
+      
+      if (region == "Norwegian Sea"){
+        data_source <- url("https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata")
+      } else if (region == "Icelandic Waters"){
+        data_source <- "inst/app/www/Iceland/tables.Rdata"
       }
-    )
+      
+      try({
+        e <- new.env()
+        load(data_source, envir = e)
+        data$info <- e$info
+        data$table.all <- e$table.all
+      }, silent = TRUE)
+      
+    }, delay = 0)
     
-    if (length(ls(e)) != 2) {
-      showNotification("RData must contain two objects: info and table.all", type = "error")
-      return()
-    }
-    
-    data$info      <- e$info
-    data$table.all <- e$table.all
   })
   
   # Update category checkbox choices
@@ -82,8 +66,10 @@ app_server <- function(input, output, session) {
   })
   
   output$lastUpdate <- renderText({ 
-    req(input$selected_locations)
-    extract_github_commit_date() })
+    region <- selected_country()
+    req(length(region)>0)
+    extract_github_commit_date(region) 
+    })
   
   output$Variables <- DT::renderDataTable({
     if(length(input$selected_categories>0)){

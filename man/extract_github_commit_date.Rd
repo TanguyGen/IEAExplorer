@@ -4,7 +4,7 @@
 \alias{extract_github_commit_date}
 \title{Extract the Last Commit Date of a Specific File from a GitHub Repository}
 \usage{
-extract_github_commit_date()
+extract_github_commit_date(region)
 }
 \value{
 A character string in the format \code{"Last updated on: dd/mm/yyyy"} representing the last commit date,
