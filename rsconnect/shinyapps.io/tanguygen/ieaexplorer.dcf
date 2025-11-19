@@ -5,6 +5,6 @@ account: tanguygen
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15944352
-bundleId: 11122657
+bundleId: 11201693
 url: https://tanguygen.shinyapps.io/ieaexplorer/
 version: 1
