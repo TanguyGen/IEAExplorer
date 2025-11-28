@@ -55,11 +55,36 @@ app_server <- function(input, output, session) {
                              selected = unique(na.omit(data$info$Category)))
   })
   
+  observe({
+    categories <- unique(data$info$Category)
+    categories <- categories[!is.na(categories) & categories != ""]
+    
+    if (length(categories) == 0) {
+      output$category_selector <- renderUI({ NULL })  # hide
+    } else {
+      output$category_selector <- renderUI({
+        checkboxGroupInput(
+          "selected_categories",
+          "Select Categories:",
+          choices = categories,
+          selected = NULL
+        )
+      })
+    }
+  })
+  
   # Reactive filtered info by selected categories
   filtered_data <- reactive({
-    req(input$selected_categories)
-    filtered <- dplyr::filter(data$info, Category %in% input$selected_categories & !is.na(Category))
+    req(input$selected_categories)   # ensures at least 1
+    
+    filtered <- dplyr::filter(
+      data$info,
+      Category %in% input$selected_categories,
+      !is.na(Category)
+    )
+    
     rv$selected_ids <- filtered$ID
+    
     filtered %>%
       dplyr::select(FullName, Unit, Category, Description, Source) %>%
       dplyr::rename(`Full name` = FullName)

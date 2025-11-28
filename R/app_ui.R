@@ -37,7 +37,7 @@ app_ui <- function(request) {
             withSpinner(leaflet::leafletOutput("map1", width = "100%")),
             br(),
             introBox(
-            checkboxGroupInput("selected_categories", "Select Categories:", choices = NULL),
+            uiOutput("category_selector"),
             data.step = 2,
             data.intro = "You can filter the variables by categories."
             ),  # Dynamic checkboxes for selecting categories

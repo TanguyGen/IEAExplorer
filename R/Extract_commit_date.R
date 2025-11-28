@@ -17,7 +17,7 @@
 extract_github_commit_date <- function(region) {
   if (region=="Norwegian Sea"){
     url= "https://api.github.com/repos/ices-eg/WGINOR/commits?path=TAF_ATAC/output/tables.Rdata"
-  }else if (selected_country=="Icelandic Waters"){
+  }else if (region=="Icelandic Waters"){
     return(NULL)
   }else{
     return(NULL)
