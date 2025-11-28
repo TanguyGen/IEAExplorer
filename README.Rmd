@@ -10,7 +10,7 @@ output: github_document
 )
 ```
 
-# `{ieaexplorer}`
+# `IEAexplorer`
 
 <!-- badges: start -->
 <!-- badges: end -->
