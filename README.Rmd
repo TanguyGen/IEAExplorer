@@ -1,0 +1,36 @@
+---
+output: github_document
+---
+
+```{r, include = FALSE}
+  knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    out.width = "100%"
+)
+```
+
+# `{ieaexplorer}`
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+## Installation
+
+You can install and run the development version of `{ieaexplorer}` like so:
+
+```{r}
+remotes::install_github("TanguyGen/IEAExplorer")
+ieaexplorer::run_app()
+```
+
+or install this repository and run:
+```{r, eval = FALSE}
+library(shiny)
+runApp()
+```
+
+## About
+
+IEAExplorer is an app made to visualise and download time series, using the ATAC analysis (Analysis of Trend And recent Changes) for different marine socio-ecosystems.
+The time series include data on ocean climate, ecology, human pressure and sectors.
