@@ -83,7 +83,7 @@ app_server <- function(input, output, session) {
       !is.na(Category)
     )
     
-    rv$selected_ids <- filtered$ID
+    rv$selected_ids <- filtered$ShortNameKey
     
     filtered %>%
       dplyr::select(FullName, Unit, Category, Description, Source) %>%
@@ -165,7 +165,7 @@ app_server <- function(input, output, session) {
     
     plotlist <- lapply(names(selected_data), function(id) {
       df <- selected_data[[id]]
-      info_item <- info[info$ID == id, ]
+      info_item <- info[info$ShortNameKey == id, ]
       
       if (tibble::is_tibble(df) && ncol(df) >= 2) {
         ggATAC(result = df, width = width) +
@@ -219,9 +219,9 @@ app_server <- function(input, output, session) {
         }
         data_item <- filter(data_item, year >= years[1] &
                               year <= years[2]) # Filter data by selected year range
-        data_item[, Variable := info$FullName[info$ID == id]]
+        data_item[, Variable := info$FullName[info$ShortNameKey == id]]
         modified_data[[id]] <- data_item
-        metadata[[id]] <- info[info$ID == id, ]
+        metadata[[id]] <- info[info$ShortNameKey == id, ]
       }
       
       # Combine and export to Excel with metadata
