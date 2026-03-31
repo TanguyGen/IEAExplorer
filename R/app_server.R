@@ -247,7 +247,7 @@ app_server <- function(input, output, session) {
   output$selectedVarsTable <- DT::renderDataTable({
     req(rv$DataVariables)
     data$info %>%
-      filter(ID %in% names(rv$DataVariables)) %>%
+      filter(ShortNameKey %in% names(rv$DataVariables)) %>%
       select(FullName, Unit, Description, Source) %>%
       rename(
         `Full name` = FullName,
