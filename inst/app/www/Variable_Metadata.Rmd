@@ -1,0 +1,22 @@
+---
+title: "Variable Metadata for `r params$var$FullName`"
+output: html_document
+params:
+  var: NULL
+---
+
+
+```{r setup, include=FALSE}
+var <- params$var
+```
+
+---
+```{r results='asis', echo=FALSE}
+
+cols <- setdiff(colnames(var), "FullName")
+
+for(col in cols){
+
+  cat("# ", col, "\n\n", sep = "")
+  cat(as.character(var[[col]]), "\n\n")
+}

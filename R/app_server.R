@@ -34,7 +34,7 @@ app_server <- function(input, output, session) {
       if (region == "Norwegian Sea"){
         data_source <- url("https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata")
       } else if (region == "Icelandic Waters"){
-        data_source <- "inst/app/www/Iceland/tables.Rdata"
+        data_source <- "www/Iceland/tables.Rdata"
       }
       
       try({
@@ -98,9 +98,19 @@ app_server <- function(input, output, session) {
   
   output$Variables <- DT::renderDataTable({
     if(length(input$selected_categories>0)){
-      dat <- filtered_data() %>% tibble::add_column(" " = "", .before = 1)
+      dat <- filtered_data() %>% tibble::add_column(" " = "", .before = 1)%>%
+          mutate(
+            Details = sprintf(
+              '<button class="btn btn-primary btn-sm"
+     onclick="Shiny.setInputValue(\'open_details\', \'%s\', {priority: \'event\'})">
+     Details
+     </button>',
+              `Full name`
+            )
+          )
     }else{
-      dat <- data.frame(FullName=NA, Unit=NA, Category=NA, Description=NA, Source=NA) %>% tibble::add_column(" " = "", .before = 1)
+      dat <- data.frame(FullName=NA, Unit=NA, Category=NA, Description=NA, Source=NA) %>% 
+        tibble::add_column(" " = "", .before = 1)
     }
     
     DT::datatable(
@@ -123,6 +133,44 @@ app_server <- function(input, output, session) {
     )
   }, server = FALSE)
   
+  observeEvent(input$open_details, {
+    req(data$info)
+    
+    info <- data$info
+    
+    selected_var <- info%>%
+      filter(FullName==input$open_details)
+
+    rmarkdown::render(
+      input = "inst/app/www/Variable_Metadata.Rmd",
+      output_file ="Variable_Metadata.html" ,
+      output_dir = "www",
+      params = list(
+        var = selected_var
+      ),
+      envir = new.env(parent = globalenv())
+    )
+    
+    insertTab(
+      inputId = "menu",
+      target="Method Description",
+      position="before",
+      tabPanel(
+        title = "Metadata",
+        tags$iframe(
+          src = "www/Variable_Metadata.html",
+          width = "100%",
+          height = "900px",
+          style = "border:none;"
+        )
+      ),
+      
+      select = TRUE
+    )
+    
+    
+  })
+
   # Update selected data and year range limits when rows are selected
   observe({
     req(input$Variables_rows_selected)
