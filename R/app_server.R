@@ -34,7 +34,7 @@ app_server <- function(input, output, session) {
       if (region == "Norwegian Sea"){
         data_source <- url("https://raw.githubusercontent.com/ices-eg/WGINOR/refs/heads/main/TAF_ATAC/output/tables.Rdata")
       } else if (region == "Icelandic Waters"){
-        data_source <- "www/Iceland/tables.Rdata"
+        data_source <- "inst/app/www/Iceland/tables.Rdata"
       }
       
       try({
@@ -133,41 +133,71 @@ app_server <- function(input, output, session) {
     )
   }, server = FALSE)
   
+  
+  existing_tabs <- reactiveVal(FALSE)
+  
+  
+  selected_var <- reactiveVal(NULL)
+  
   observeEvent(input$open_details, {
     req(data$info)
     
     info <- data$info
     
-    selected_var <- info%>%
-      filter(FullName==input$open_details)
+    selected_var(info%>%
+      filter(FullName==input$open_details))
 
-    rmarkdown::render(
-      input = "inst/app/www/Variable_Metadata.Rmd",
-      output_file ="Variable_Metadata.html" ,
-      output_dir = "www",
-      params = list(
-        var = selected_var
-      ),
-      envir = new.env(parent = globalenv())
-    )
-    
-    insertTab(
-      inputId = "menu",
-      target="Method Description",
-      position="before",
-      tabPanel(
-        title = "Metadata",
-        tags$iframe(
-          src = "www/Variable_Metadata.html",
-          width = "100%",
-          height = "900px",
-          style = "border:none;"
-        )
-      ),
+    if (!existing_tabs()){
+      insertTab(
+        inputId = "menu",
+        target="Method Description",
+        position="before",
+        tabPanel(
+          title = "Metadata",
+          value="metadata",
+          uiOutput("metadata_ui")
+        ),
+        
+        select = TRUE
+      )
       
-      select = TRUE
-    )
+      existing_tabs(TRUE)
+    }else{
+      updateTabsetPanel(
+        session,
+        inputId = "menu",
+        selected = "metadata"
+      )
+    }
+   
+  })
+  
+  
+  better_name <- function(x) {
+    gsub("(?<=[a-z0-9])(?=[A-Z])", " ", x, perl = TRUE)
+  }
+  
+  output$metadata_ui <- renderUI({
     
+    req(selected_var())
+    
+    var <- selected_var()
+    
+    tagList(
+      
+      h1(
+        paste("Metadata for", var$FullName)
+        ),
+      
+      lapply(setdiff(names(var), "FullName"), function(col) {
+        
+        tagList(
+          h2(better_name(col)),
+          p(var[[col]]),
+          br()
+        )
+      })
+    )
     
   })
 

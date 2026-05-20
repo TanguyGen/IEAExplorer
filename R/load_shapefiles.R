@@ -13,6 +13,7 @@ load_shape_europe <- function(){
   return(eu_shape)
 }
 
+
 #' Loads a simplified shapefile for ICES Ecoregions.
 #' 
 #' @return sf file
