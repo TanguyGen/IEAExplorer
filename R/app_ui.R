@@ -26,12 +26,12 @@ app_ui <- function(request) {
     
     # Navigation bar layout with multiple tabs
     navbarPage(
-      "Menu", #Navigation bar title
+      "", #Navigation bar title
       id = "menu",
       
       # --- First Tab: Variables ---
       tabPanel(
-        "Variables",
+        "Select Variables",
         sidebarLayout(
           sidebarPanel(
             withSpinner(leaflet::leafletOutput("map1", width = "100%")),
@@ -61,7 +61,7 @@ app_ui <- function(request) {
           )
         )
       ),tabPanel(
-        "Graphs",
+        "Visualise Time Series",
         fluidRow(
           column(12,
                  introBox(
@@ -76,7 +76,7 @@ app_ui <- function(request) {
         )
       ),
       tabPanel(
-        "Download",
+        "Download Time Series",
         introBox(
           fluidRow(
             column(2, br(),
@@ -118,7 +118,7 @@ app_ui <- function(request) {
 
       ),
       tabPanel(
-        "Info",
+        "Method Description",
         introBox(
           fluidRow(
             htmltools::includeMarkdown(system.file("app/www/ATAC_description.Rmd", package="ieaexplorer")), # Include Markdown description
@@ -142,6 +142,8 @@ app_ui <- function(request) {
     )
   )
 }
+
+##Nouvel onglet Metadata entre Graphs et Info
 
 #' Add external Resources to the Application
 #'
