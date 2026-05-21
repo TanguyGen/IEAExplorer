@@ -51,7 +51,7 @@ app_ui <- function(request) {
             ),
             br(),
             introBox(
-            actionButton("continue", "Continue", class = "btn-success", width = 200), #Button Continue
+            actionButton("continue", "Visualise", class = "btn-success", width = 200), #Button Continue
             data.step = 3,
             data.intro = "Once you have chose your variables click on Continue to see the graphs."
             ),

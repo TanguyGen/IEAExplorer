@@ -216,7 +216,7 @@ app_server <- function(input, output, session) {
   observeEvent(input$continue, {
     req(input$Variables_rows_selected)
     
-    updateTabsetPanel(session, "menu", selected = "Graphs")
+    updateTabsetPanel(session, "menu", selected = "Visualise Time Series")
   })
   
   
